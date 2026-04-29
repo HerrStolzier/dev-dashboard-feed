@@ -10,6 +10,40 @@ struct DocumentItem: Identifiable, Hashable, Sendable {
     let summary: String
     let explainer: String?
     let relativeTimestamp: String
+    let modifiedAt: Date
+    let sourceKind: DocumentSourceKind
+    let accentColor: String?
+    let generatedAt: Date?
+
+    init(
+        id: String,
+        title: String,
+        project: String,
+        path: String,
+        absolutePath: String?,
+        previewRootPath: String?,
+        summary: String,
+        explainer: String?,
+        relativeTimestamp: String,
+        modifiedAt: Date = .distantPast,
+        sourceKind: DocumentSourceKind = .htmlArtifact,
+        accentColor: String? = nil,
+        generatedAt: Date? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.project = project
+        self.path = path
+        self.absolutePath = absolutePath
+        self.previewRootPath = previewRootPath
+        self.summary = summary
+        self.explainer = explainer
+        self.relativeTimestamp = relativeTimestamp
+        self.modifiedAt = modifiedAt
+        self.sourceKind = sourceKind
+        self.accentColor = accentColor
+        self.generatedAt = generatedAt
+    }
 }
 
 extension DocumentItem {

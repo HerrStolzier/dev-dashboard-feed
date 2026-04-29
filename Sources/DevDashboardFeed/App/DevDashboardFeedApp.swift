@@ -16,7 +16,8 @@ struct DevDashboardFeedApp: App {
         MenuBarExtra("Dev Dashboard Feed", systemImage: "rectangle.stack") {
             MenuBarView(
                 documentCount: appModel.documents.count,
-                watchedFolderCount: appModel.watchedFolders.count
+                watchedFolderCount: appModel.watchedFolders.count,
+                projectRepoCount: appModel.projectRepos.count
             )
         }
     }

@@ -18,6 +18,14 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Fuer wiederholbare Preview-Pruefungen sind echte Fixture-HTML-Dateien mit relativen CSS-, Bild- und JavaScript-Assets hilfreicher als nur statische Testdaten ohne Nachbarressourcen.
 - In einer headless Terminal-Umgebung ist ein normaler Bildschirm-Screenshot fuer eine macOS-App nicht immer verfuegbar. Offscreen-`WKWebView`-Probetests sind dann ein guter Ersatz, um Asset-Laden realistisch zu pruefen.
 - Launch-Overrides fuer Testordner und Startdokument machen UI-nahe Verifikation deutlich leichter, ohne den normalen Produktpfad fuer echte Nutzer zu verbiegen.
+- Die Produkt-Richtung ist jetzt ausdruecklich bunt, persoenlich und projektzentriert. "Ruhig" ist nicht mehr das Zielbild; TurboQuant-Style ist die visuelle Referenz.
+- Daily-Digest-HTMLs sollen selbststaendig sein: eingebettetes CSS, keine externen Assets als harte Voraussetzung, WebView-kompatibel.
+- Generierte Projektposts gehoeren in Application Support, nicht in die beobachteten HTML-Ordner und nicht in die Git-Repos selbst.
+- Git-Commits sind die Digest-Quelle. Uncommitted Working-Tree-Dateien sollen nicht als Aktivitaet in Daily Digests eingehen.
+- Git sollte ueber `Process` mit Argument-Array aufgerufen werden, nicht ueber zusammengesetzte Shell-Strings. Das haelt Repo-Pfade und Commit-Inhalte deutlich einfacher kontrollierbar.
+- Commit-Inhalte, Dateipfade und Repo-Namen muessen im Digest-HTML escaped werden. Der Renderer darf nie Rohwerte direkt als HTML einsetzen.
+- Fuer Tests mit historischen Commit-Zeitpunkten ist Author-Date wichtig. `git log --since` kann wegen Committer-Date unerwartet sein; deshalb filtert der Scanner die geparsten Author-Dates in Swift.
+- Ein echter 20:00-Background-Agent sollte nicht vorgetaeuscht werden. Erst die Bundle-/Helper-Struktur klaeren, dann `SMAppService` oder LaunchAgent-Plist sauber anschliessen.
 
 ## Workflow Gotchas
 
@@ -33,3 +41,4 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 
 - Standard-Verifikation fuer dieses Projekt ist: `swift build`, `swift test` und wenn sinnvoll `swift run DevDashboardFeed`.
 - Ein erfolgreicher Build allein reicht nicht. Bei UI-nahen Aenderungen sollte die App mindestens einmal real gestartet werden.
+- Bei Design-aehnlichen HTML-Renderern lohnt sich Browser-use gegen eine echte `file://`-Datei. Tests pruefen Klassen und Text, aber der Browser zeigt, ob Gradient, Badges und Karten wirklich als Seite wirken.

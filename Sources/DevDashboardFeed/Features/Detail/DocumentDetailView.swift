@@ -9,12 +9,23 @@ struct DocumentDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
+                    if document.sourceKind == .dailyDigest {
+                        Text("Daily Digest")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .textCase(.uppercase)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .foregroundStyle(accentColor)
+                            .background(accentColor.opacity(0.14), in: Capsule())
+                    }
+
                     Text(document.title)
                         .font(.largeTitle)
                         .fontWeight(.bold)
 
                     HStack(spacing: 12) {
-                        Label(document.project, systemImage: "folder")
+                        Label(document.project, systemImage: document.sourceKind == .dailyDigest ? "sparkles.rectangle.stack" : "folder")
                         Label(document.path, systemImage: "doc")
                     }
                     .foregroundStyle(.secondary)
@@ -130,5 +141,9 @@ struct DocumentDetailView: View {
             .padding(24)
             .background(.regularMaterial)
         }
+    }
+
+    private var accentColor: Color {
+        Color(devboardHex: document.accentColor ?? "#38bdf8")
     }
 }

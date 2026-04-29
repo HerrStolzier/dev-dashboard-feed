@@ -4,22 +4,24 @@
 
 `dev-dashboard-feed`
 
-Native macOS-App, die lokale HTML-Dokumente als ruhigen, visuell guten Feed anzeigt.
-Die App ist kein Wiki und kein CMS. Sie ist ein local-first Reader fuer generierte HTML-Artefakte.
+Native macOS-App, die lokale HTML-Dokumente und Git-Projektaktivitaet als bunten, persoenlichen Projekt-Feed anzeigt.
+Die App ist kein Wiki und kein CMS. Sie ist ein local-first Devboard fuer generierte HTML-Artefakte und lokale Daily-Digests.
 
 ## Zielbild
 
 Die App soll:
 
 - lokale HTML-Dateien beobachten
+- lokale Git-Repos als Projektquellen verwalten
 - daraus Feed-Eintraege bauen
+- aus Git-Commits farbige Daily-Digest-HTMLs im TurboQuant-Stil erzeugen
 - gute Vorschauen und eine Vollansicht anbieten
 - Erklaerbaer-Bloecke erkennen und hervorheben
 - sich wie eine native macOS-App anfuehlen
 
 ## Produktidee in einem Satz
 
-Wie ein persoenlicher Feed fuer Entwickler-Dokumente, nur lokal, angenehm lesbar und ohne Serverpflicht.
+Wie ein privates, buntes Social-Media-Devboard fuer eigene Projekte, nur lokal, ohne Serverpflicht und ohne Cloud-Zusammenfassung.
 
 ## Wichtige Referenzen
 
@@ -34,40 +36,44 @@ Wie ein persoenlicher Feed fuer Entwickler-Dokumente, nur lokal, angenehm lesbar
 - Feed-, Detail-, Settings- und Menu-Bar-Struktur stehen.
 - Ein nativer Folder-Picker mit gespeichertem Ordnerzugriff ist eingebaut.
 - HTML-Dateien aus beobachteten Ordnern werden bereits rekursiv gescannt und als Feed-Eintraege angezeigt.
-- Die eigentliche HTML-Vollansicht im Detailbereich fehlt noch.
+- Lokale HTML-Dateien werden in der Detailansicht per `WKWebView` angezeigt.
+- Project-Repos koennen gespeichert werden.
+- Manuelle Daily-Digests aus lokalen Git-Commits werden als TurboQuant-Style-HTML erzeugt und im Feed angezeigt.
 
 ## Architektur-Richtung
 
 - `SwiftUI` zuerst
 - `AppKit` nur dort, wo macOS-Integration wirklich gebraucht wird
 - HTML-Dateien bleiben unveraenderte Quellartefakte
+- Git-Repos bleiben ebenfalls unveraendert; generierte Digests liegen zentral in Application Support
 - Die App legt nur Index, Metadaten, Preview und Feed-Darstellung darueber
 - Erst kleine, belastbare Schritte. Keine grossen Umbrueche ohne echten Bedarf.
 
 ## Was als Naechstes wichtig ist
 
-1. echte lokale HTML-Vorschau in der Detailansicht
-2. danach robuster File-Watcher fuer Aenderungen
+1. echten 20:00-Background-Agent sauber paketieren und registrieren
+2. danach robuster File-Watcher fuer Aenderungen in HTML-Ordnern
 3. danach bessere Metadaten, Filter und Suchlogik
-4. erst spaeter staerkeres UI-Polish
+4. danach staerkeres UI-Polish im TurboQuant-/Social-Feed-Stil
 
 ## Nicht aus Versehen in die falsche Richtung laufen
 
 - Nicht sofort Editor-Funktionen bauen
-- Nicht wie eine Doku-Website denken
-- Nicht zuerst Animationen und Feinschliff priorisieren
+- Nicht wie eine Doku-Website oder einen stillen Reader denken
+- Nicht zuerst Animationen priorisieren, bevor der lokale Projektfluss stabil ist
 - Nicht HTML-Dateien mutieren oder umschreiben
+- Nicht Git-Repos beschreiben oder Working-Tree-Dateien als Digest-Quelle verwenden
 - Keine grosse Architektur ausdenken, wenn ein kleiner lokaler Schritt reicht
 
 ## UX-Leitlinien
 
-- ruhig
-- natuerlich
+- bunt
+- persoenlich
+- projektzentriert
 - schnell lesbar
-- wenig Reibung
-- gute Standardansicht fuer "was ist neu?"
+- lebendige Standardansicht fuer "was ist in meinen Projekten passiert?"
 
-Die App soll eher wie ein guter macOS-Reader wirken als wie ein lautes Dashboard.
+Die App soll wie ein privates Projekt-Social-Feed wirken: farbig, energievoll und trotzdem lokal beherrschbar.
 
 ## Technische Stolpersteine
 
@@ -76,6 +82,8 @@ Die App soll eher wie ein guter macOS-Reader wirken als wie ein lautes Dashboard
 - HTML-Preview mit relativen Assets
 - grosse Dateien ohne ruckelige UI
 - Parser-Regeln fuer Erklaerbaer-Hinweise nicht zu locker machen
+- Git-Datumslogik: fuer Daily-Digests Author-Dates bewusst filtern, statt blind auf `git log --since` zu vertrauen
+- Background-Agent sauber von manuellen App-Laeufen trennen; keine Schein-Automatik einbauen
 
 ## Arbeitsstandard fuer dieses Projekt
 

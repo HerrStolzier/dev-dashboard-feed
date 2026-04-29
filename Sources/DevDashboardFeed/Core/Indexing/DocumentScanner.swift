@@ -1,7 +1,13 @@
 import Foundation
 
 protocol DocumentScanning {
-    func scanDocuments(in folders: [WatchedFolder]) -> [DocumentItem]
+    func scanDocuments(in folders: [WatchedFolder], sourceKind: DocumentSourceKind) -> [DocumentItem]
+}
+
+extension DocumentScanning {
+    func scanDocuments(in folders: [WatchedFolder]) -> [DocumentItem] {
+        scanDocuments(in: folders, sourceKind: .htmlArtifact)
+    }
 }
 
 struct DocumentScanner: DocumentScanning {
@@ -13,15 +19,15 @@ struct DocumentScanner: DocumentScanning {
         self.now = now
     }
 
-    func scanDocuments(in folders: [WatchedFolder]) -> [DocumentItem] {
+    func scanDocuments(in folders: [WatchedFolder], sourceKind: DocumentSourceKind) -> [DocumentItem] {
         folders
             .filter(\.isAccessible)
-            .flatMap(scanDocuments(in:))
+            .flatMap { scanDocuments(in: $0, sourceKind: sourceKind) }
             .sorted { $0.relativeSortKey > $1.relativeSortKey }
             .map(\.item)
     }
 
-    private func scanDocuments(in folder: WatchedFolder) -> [ScannedDocument] {
+    private func scanDocuments(in folder: WatchedFolder, sourceKind: DocumentSourceKind) -> [ScannedDocument] {
         let rootURL = URL(fileURLWithPath: folder.path, isDirectory: true)
 
         guard let enumerator = fileManager.enumerator(
@@ -49,6 +55,7 @@ struct DocumentScanner: DocumentScanning {
                     fileURL: fileURL,
                     rootURL: rootURL,
                     projectName: folder.name,
+                    sourceKind: sourceKind,
                     modificationDate: resourceValues.contentModificationDate
                 )
                 documents.append(document)
@@ -64,6 +71,7 @@ struct DocumentScanner: DocumentScanning {
         fileURL: URL,
         rootURL: URL,
         projectName: String,
+        sourceKind: DocumentSourceKind,
         modificationDate: Date?
     ) throws -> ScannedDocument {
         let html = try loadHTML(from: fileURL)
@@ -84,7 +92,10 @@ struct DocumentScanner: DocumentScanning {
                 previewRootPath: rootURL.path,
                 summary: summary,
                 explainer: explainer,
-                relativeTimestamp: relativeTimestamp(for: modifiedAt)
+                relativeTimestamp: relativeTimestamp(for: modifiedAt),
+                modifiedAt: modifiedAt,
+                sourceKind: sourceKind,
+                generatedAt: sourceKind == .dailyDigest ? modifiedAt : nil
             ),
             relativeSortKey: modifiedAt
         )

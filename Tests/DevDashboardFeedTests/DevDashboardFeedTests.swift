@@ -324,7 +324,7 @@ private final class FakeFolderAccessController: FolderAccessControlling {
 private struct FakeDocumentScanner: DocumentScanning {
     let documents: [DocumentItem]
 
-    func scanDocuments(in folders: [WatchedFolder]) -> [DocumentItem] {
+    func scanDocuments(in folders: [WatchedFolder], sourceKind: DocumentSourceKind) -> [DocumentItem] {
         documents
     }
 }

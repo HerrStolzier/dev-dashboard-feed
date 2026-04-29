@@ -10,7 +10,7 @@ struct ContentView: View {
                 FeedCardView(document: document)
                     .tag(document.id)
             }
-            .navigationTitle("Recent Docs")
+            .navigationTitle("Project Feed")
         } detail: {
             if let selectedDocument = appModel.documents.first(where: { $0.id == selection }) {
                 DocumentDetailView(document: selectedDocument)
@@ -24,6 +24,13 @@ struct ContentView: View {
         }
         .frame(minWidth: 980, minHeight: 620)
         .toolbar {
+            ToolbarItem {
+                Button("Run Digests") {
+                    appModel.runDailyDigests()
+                }
+                .disabled(appModel.projectRepos.filter(\.isActive).isEmpty)
+            }
+
             ToolbarItem {
                 Button("Choose Folder…") {
                     appModel.chooseWatchedFolder()
@@ -39,15 +46,15 @@ struct ContentView: View {
     }
 
     private var detailDescription: String {
-        if appModel.watchedFolders.isEmpty {
-            return "Choose your first folder to watch. The future app will scan local HTML files from there and show them in this feed."
+        if appModel.watchedFolders.isEmpty && appModel.projectRepos.isEmpty {
+            return "Choose a project repo for Daily Digests or a folder of local HTML files. The feed will turn those local artifacts into a timeline."
         }
 
         if appModel.documents.isEmpty {
-            return "The watched folders are connected, but no HTML files were found yet. Add some generated docs and they should appear here."
+            return "The sources are connected, but nothing is ready for the feed yet. Run Daily Digests or add generated HTML files."
         }
 
-        return "The app is already reading HTML metadata from \(appModel.watchedFolders.count) watched folder(s). The next step is a richer detail preview."
+        return "The app is reading \(appModel.documents.count) local feed item(s), including manual HTML files and generated project digests."
     }
 
     private func ensureValidSelection() {

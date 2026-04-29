@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     let documentCount: Int
     let watchedFolderCount: Int
+    let projectRepoCount: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -11,7 +12,9 @@ struct MenuBarView: View {
 
             Text("\(watchedFolderCount) watched folder(s) configured")
                 .foregroundStyle(.secondary)
-            Text("\(documentCount) sample documents loaded")
+            Text("\(projectRepoCount) project repo(s) configured")
+                .foregroundStyle(.secondary)
+            Text("\(documentCount) feed item(s) loaded")
                 .foregroundStyle(.secondary)
 
             Divider()
@@ -19,7 +22,7 @@ struct MenuBarView: View {
             Text("Next milestone")
                 .font(.subheadline)
                 .fontWeight(.semibold)
-            Text("Wire the stored folders into HTML scanning and feed indexing.")
+            Text("Package the 20:00 background digest runner as a real macOS helper.")
                 .foregroundStyle(.secondary)
 
             Divider()
