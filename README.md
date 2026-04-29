@@ -2,61 +2,90 @@
 
 Native macOS app that turns local HTML docs into a calm, visual developer feed.
 
-## Why this exists
+## Why This Exists
 
-Developer information is usually scattered across docs pages, release notes, changelogs, and half-open browser tabs. This project explores a quieter alternative: pull local HTML documentation into one place, extract the important bits, and present them like a focused reading feed instead of a noisy browser session.
+Developer information is usually scattered across generated docs, changelogs,
+release notes, and half-open browser tabs. This project explores a quieter
+alternative: keep local HTML artifacts on disk, index the useful metadata, and
+present them like a focused reading feed instead of a noisy browser session.
 
-## Core Product Idea
+The goal is not another documentation site. The goal is a calm desk for
+developer reading.
 
-Dev Dashboard Feed should help you:
+## Current Status
 
-- watch one or more local documentation folders
-- detect fresh or changed HTML files
-- extract titles, sections, dates, and summaries
-- group related updates into a readable feed
-- open the source doc instantly when you want the full context
+This repository contains a working SwiftUI macOS foundation with:
 
-The goal is not another tab jungle. The goal is a calm desk for developer reading.
+- a feed/detail/settings structure
+- a native watched-folder picker with persisted folder access
+- recursive HTML scanning for watched folders
+- sample-data fallback when no watched folders are configured
+- local HTML preview in the detail view through `WKWebView`
+- safer preview navigation for local files and external links
+- fixture HTML documents with relative CSS, JavaScript, and SVG assets
+- unit and WebKit probe tests for the scanner and preview flow
+- a script that builds and starts a real `.app` bundle
 
-## Product Principles
+The current handoff docs live in:
 
-- **Local first**: your docs stay on your machine
-- **Quiet by default**: signal over noise
-- **Readable in one glance**: strong hierarchy, not dashboard clutter
-- **Explainable**: summaries should always link back to source material
-- **Useful before clever**: the feed should already be valuable before adding fancy AI layers
+- `docs/current-status.md`
+- `docs/project-learnings.md`
 
-## Planned Experience
+The broader product plan lives next to this repository at:
 
-1. Point the app at a folder of exported docs or HTML files.
-2. The app indexes pages and tracks what changed.
-3. New updates show up as clean cards with context, source, and timestamps.
-4. You skim the feed, mark items as read, and jump into the original doc when needed.
+- `../dev-dashboard-feed-plan.md`
 
-## Planned Stack
+## Product Direction
 
-- SwiftUI for the main interface
-- AppKit interop where macOS-specific behavior needs it
-- local parsing and indexing
-- optional semantic grouping or summarization later
+The app should:
 
-## Status
+- watch local folders with HTML files
+- turn files into feed items
+- show previews and a readable detail view
+- highlight explanation blocks like "Erklaerbaer"
+- feel native on macOS
 
-This repo is in the concept-and-direction stage.
+The app should not become a CMS or mutate the source HTML files. HTML documents
+stay as source artifacts; the app adds index, metadata, preview, and reading
+flow around them.
 
-That means the most important thing here right now is a sharp product definition:
+## Build And Test
 
-- what the app should feel like
-- what problems it should solve first
-- what *not* to turn into unnecessary complexity
+```bash
+swift build
+swift test
+```
 
-## First Milestones
+To build and launch the macOS app bundle:
 
-- [ ] define the first-run user flow
-- [ ] decide which HTML sources to support first
-- [ ] design the feed card anatomy
-- [ ] add a first local parser + indexer
-- [ ] build the initial macOS reading interface
+```bash
+./script/build_and_run.sh
+```
+
+To run a quick launch check with the included preview fixtures:
+
+```bash
+./script/build_and_run.sh --verify \
+  --watched-folder "$PWD/Fixtures/PreviewManual" \
+  --selected-document "$PWD/Fixtures/PreviewManual/index.html"
+```
+
+## Near-Term Next Steps
+
+1. Add a file watcher so created, changed, renamed, and deleted HTML files
+   refresh without relaunch.
+2. Add search, filters, and sort modes for the feed.
+3. Do a visible desktop click test for local preview navigation and visual
+   polish.
+4. Check large HTML files for UI pauses.
+
+## Project Workflow
+
+This project uses a strict handoff standard:
+
+1. After each completed step, update `docs/current-status.md`.
+2. If the step revealed a durable lesson, update `docs/project-learnings.md`.
+3. A new agent should be able to continue from the docs plus the code alone.
 
 ## License
 

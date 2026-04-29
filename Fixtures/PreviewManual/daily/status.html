@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Daily Status Preview</title>
+    <link rel="stylesheet" href="../assets/reader.css">
+    <script src="../assets/proof.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <span class="eyebrow">Nested HTML</span>
+      <h1>Daily Status Preview</h1>
+      <p>This page lives one folder deeper and reaches back up to shared assets. If this page renders well, relative paths across folders are working too.</p>
+
+      <img class="hero-diagram" src="../assets/diagram.svg" alt="Shared diagram loaded from a parent folder">
+
+      <section class="proof-grid">
+        <article class="proof-card">
+          <p class="proof-label">Asset reach</p>
+          <p class="proof-value">This file loads CSS, SVG, and JS from <code>../assets</code>.</p>
+        </article>
+        <article class="proof-card">
+          <p class="proof-label">JavaScript proof</p>
+          <p class="proof-value" id="script-proof">Waiting for nested script load...</p>
+        </article>
+        <article class="proof-card">
+          <p class="proof-label">Load stamp</p>
+          <p class="proof-value" id="loaded-at">Nested HTML only</p>
+        </article>
+      </section>
+
+      <section class="explainer">
+        <h2>Erklaerbaer</h2>
+        <p>Nested previews are the real stress test. They show whether the app only knows one file, or whether it truly understands the folder around that file.</p>
+      </section>
+
+      <nav class="action-links">
+        <a href="../notes/explainer.html">Open explainer note</a>
+        <a href="../index.html">Back to fixture index</a>
+        <a class="external-link" href="https://developer.apple.com/documentation/webkit">Open WebKit docs</a>
+      </nav>
+    </main>
+  </body>
+</html>

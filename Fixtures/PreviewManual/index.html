@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Preview Fixture Index</title>
+    <link rel="stylesheet" href="assets/reader.css">
+    <script src="assets/proof.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <span class="eyebrow">Fixture Root</span>
+      <h1>Preview Fixture Index</h1>
+      <p>This page is meant to prove that local CSS, SVG images, and JavaScript all survive the inline preview.</p>
+
+      <img class="hero-diagram" src="assets/diagram.svg" alt="Pipeline diagram showing HTML, CSS, JavaScript and a rendered preview">
+
+      <section class="proof-grid">
+        <article class="proof-card">
+          <p class="proof-label">CSS proof</p>
+          <p class="proof-value">Warm cards and rounded image framing should be visible.</p>
+        </article>
+        <article class="proof-card">
+          <p class="proof-label">JavaScript proof</p>
+          <p class="proof-value" id="script-proof">Waiting for local JavaScript...</p>
+        </article>
+        <article class="proof-card">
+          <p class="proof-label">Load stamp</p>
+          <p class="proof-value" id="loaded-at">Server-side HTML only</p>
+        </article>
+      </section>
+
+      <section class="explainer">
+        <h2>Erklaerbaer</h2>
+        <p>Think of this page like a calm test card. If it looks polished and the text says that JavaScript loaded, the preview is reading nearby assets correctly.</p>
+      </section>
+
+      <nav class="action-links">
+        <a href="daily/status.html">Open nested daily status</a>
+        <a href="notes/explainer.html">Open explainer note</a>
+        <a class="external-link" href="https://example.com">Open external example link</a>
+      </nav>
+    </main>
+  </body>
+</html>

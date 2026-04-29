@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Explainer Note Preview</title>
+    <link rel="stylesheet" href="../assets/reader.css">
+    <script src="../assets/proof.js" defer></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <span class="eyebrow">Second Document</span>
+      <h1>Explainer Note Preview</h1>
+      <p>This note keeps the same shared assets but uses a different document path. That makes it useful for checking feed selection and per-document preview stability.</p>
+
+      <section class="proof-grid">
+        <article class="proof-card">
+          <p class="proof-label">Selection proof</p>
+          <p class="proof-value">If you see this title, the app opened a specific document on launch.</p>
+        </article>
+        <article class="proof-card">
+          <p class="proof-label">JavaScript proof</p>
+          <p class="proof-value" id="script-proof">Waiting for launch override proof...</p>
+        </article>
+        <article class="proof-card">
+          <p class="proof-label">Load stamp</p>
+          <p class="proof-value" id="loaded-at">Waiting for client signal</p>
+        </article>
+      </section>
+
+      <section class="explainer">
+        <h2>Erklaerbaer</h2>
+        <p>A launch override is like opening a book directly on the page you care about. It helps us verify the right preview quickly, without hand-clicking through the UI first.</p>
+      </section>
+
+      <nav class="action-links">
+        <a href="../daily/status.html">Open nested daily status</a>
+        <a href="../index.html">Back to fixture index</a>
+        <a class="external-link" href="https://example.com/help">Open external help link</a>
+      </nav>
+    </main>
+  </body>
+</html>

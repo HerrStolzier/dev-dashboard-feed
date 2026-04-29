@@ -1,0 +1,115 @@
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: "Avenir Next", "Helvetica Neue", sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(245, 188, 102, 0.22), transparent 28%),
+    linear-gradient(180deg, #f7f3ea 0%, #f1ece2 100%);
+  color: #2f2b25;
+}
+
+.page-shell {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 40px 28px 56px;
+}
+
+.eyebrow {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(111, 85, 42, 0.12);
+  color: #6f552a;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 18px 0 10px;
+  font-size: 42px;
+  line-height: 1.05;
+}
+
+p,
+li {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.proof-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin: 28px 0;
+}
+
+.proof-card {
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(61, 46, 24, 0.09);
+  box-shadow: 0 14px 40px rgba(70, 51, 20, 0.08);
+}
+
+.proof-label {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #87663a;
+}
+
+.proof-value {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.hero-diagram {
+  width: min(100%, 420px);
+  display: block;
+  margin: 22px 0 12px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 14px 40px rgba(70, 51, 20, 0.1);
+}
+
+.explainer {
+  margin: 26px 0;
+  padding: 18px 20px;
+  border-left: 5px solid #df8d29;
+  border-radius: 18px;
+  background: rgba(255, 248, 230, 0.92);
+}
+
+.action-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.action-links a {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #2f2b25;
+  color: #faf6ef;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.action-links a.external-link {
+  background: #9a4f27;
+}
+
+.js-ready .js-proof {
+  color: #14704a;
+}
