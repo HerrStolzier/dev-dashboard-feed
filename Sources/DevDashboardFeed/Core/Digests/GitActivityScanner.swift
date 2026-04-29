@@ -1,6 +1,6 @@
 import Foundation
 
-protocol GitActivityScanning {
+protocol GitActivityScanning: Sendable {
     func activity(for repo: ProjectRepo, since: Date?) throws -> GitRepoActivity
 }
 
@@ -16,11 +16,16 @@ struct GitActivityScanner: GitActivityScanning {
             throw GitActivityScannerError.notAGitRepository(repo.path)
         }
 
-        let output = try runGit(["log", "--reverse", "--date=iso-strict", "--pretty=format:%H%x1f%h%x1f%an%x1f%aI%x1f%s"], in: repo.path)
-        let commits = try output
+        var arguments = ["log", "--reverse", "--date=iso-strict", "--pretty=format:%H%x1f%h%x1f%an%x1f%aI%x1f%s"]
+        if let since {
+            arguments.insert("--since=\(ISO8601DateFormatter.devboardString(from: since))", at: 1)
+        }
+
+        let output = try runGit(arguments, in: repo.path)
+        let entries = try output
             .split(separator: "\n", omittingEmptySubsequences: true)
             .map(String.init)
-            .map { try parseCommitLine($0, repoPath: repo.path) }
+            .map(parseCommitLogEntry)
             .filter { commit in
                 guard let since else {
                     return true
@@ -28,6 +33,7 @@ struct GitActivityScanner: GitActivityScanning {
 
                 return commit.authoredAt > since
             }
+        let commits = try entries.map { try makeCommitActivity(from: $0, repoPath: repo.path) }
 
         return GitRepoActivity(repo: repo, commits: commits)
     }
@@ -37,7 +43,7 @@ struct GitActivityScanner: GitActivityScanning {
         return output.trimmingCharacters(in: .whitespacesAndNewlines) == "true"
     }
 
-    private func parseCommitLine(_ line: String, repoPath: String) throws -> GitCommitActivity {
+    private func parseCommitLogEntry(_ line: String) throws -> GitCommitLogEntry {
         let parts = line.components(separatedBy: "\u{1f}")
         guard parts.count >= 5 else {
             throw GitActivityScannerError.unparseableLogLine(line)
@@ -50,17 +56,27 @@ struct GitActivityScanner: GitActivityScanning {
             throw GitActivityScannerError.unparseableDate(dateString)
         }
 
-        let changedFiles = try runGit(["show", "--pretty=format:", "--name-only", "--no-renames", hash], in: repoPath)
+        return GitCommitLogEntry(
+            hash: hash,
+            shortHash: parts[1],
+            authorName: parts[2],
+            authoredAt: authoredAt,
+            subject: subject
+        )
+    }
+
+    private func makeCommitActivity(from entry: GitCommitLogEntry, repoPath: String) throws -> GitCommitActivity {
+        let changedFiles = try runGit(["show", "--pretty=format:", "--name-only", "--no-renames", entry.hash], in: repoPath)
             .split(separator: "\n", omittingEmptySubsequences: true)
             .map(String.init)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
         return GitCommitActivity(
-            hash: hash,
-            shortHash: parts[1],
-            subject: subject,
-            authorName: parts[2],
-            authoredAt: authoredAt,
+            hash: entry.hash,
+            shortHash: entry.shortHash,
+            subject: entry.subject,
+            authorName: entry.authorName,
+            authoredAt: entry.authoredAt,
             changedFiles: changedFiles
         )
     }
@@ -107,10 +123,22 @@ enum GitActivityScannerError: LocalizedError, Equatable {
     }
 }
 
+private struct GitCommitLogEntry {
+    let hash: String
+    let shortHash: String
+    let authorName: String
+    let authoredAt: Date
+    let subject: String
+}
+
 extension ISO8601DateFormatter {
     static func devboardDate(from string: String) -> Date? {
         formatter(options: [.withInternetDateTime]).date(from: string)
             ?? formatter(options: [.withInternetDateTime, .withFractionalSeconds]).date(from: string)
+    }
+
+    static func devboardString(from date: Date) -> String {
+        formatter(options: [.withInternetDateTime]).string(from: date)
     }
 
     private static func formatter(options: Options) -> ISO8601DateFormatter {

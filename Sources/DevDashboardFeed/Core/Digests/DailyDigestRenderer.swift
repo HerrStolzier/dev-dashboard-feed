@@ -1,6 +1,6 @@
 import Foundation
 
-struct DailyDigestRenderer {
+struct DailyDigestRenderer: Sendable {
     func render(activity: GitRepoActivity, generatedAt: Date) -> String {
         let repo = activity.repo
         let dateText = DateFormatter.devboardDay.string(from: generatedAt)

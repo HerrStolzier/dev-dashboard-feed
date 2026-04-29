@@ -97,10 +97,10 @@ struct SettingsView: View {
                         appModel.chooseProjectRepo()
                     }
 
-                    Button("Run Daily Digests") {
+                    Button(appModel.isDigestRunInProgress ? "Running Digests..." : "Run Daily Digests") {
                         appModel.runDailyDigests()
                     }
-                    .disabled(appModel.projectRepos.filter(\.isActive).isEmpty)
+                    .disabled(appModel.projectRepos.filter(\.isActive).isEmpty || appModel.isDigestRunInProgress)
                 }
             }
 

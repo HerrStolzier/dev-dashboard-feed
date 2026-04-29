@@ -7,11 +7,13 @@
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
 - Project-Repos koennen lokal gespeichert, aktiviert/deaktiviert und entfernt werden.
-- Git-Commits werden lokal gelesen und nach Author-Date seit dem letzten Crawl gefiltert.
+- Project-Repos speichern jetzt ebenfalls Bookmark-Daten, damit der Zugriff naeher am bestehenden macOS-Ordnerzugriff bleibt.
+- Git-Commits werden lokal gelesen und nach Author-Date seit dem letzten Crawl gefiltert; der Scanner begrenzt `git log` vor dem teuren `git show`-Teil.
 - Daily-Digest-HTMLs werden im TurboQuant-Stil erzeugt: Dark Background, Gradient-Headline, Badge-Reihe, Explainer-Box, Phase-Karte, Datei-Matrix und Rec-Card.
 - Generierte Digests werden zentral unter Application Support abgelegt, nicht im jeweiligen Repo.
 - Der Feed zeigt Daily Digests als farbige Social Cards mit Projektakzent und eigener Quellenart.
 - Settings haben jetzt einen Bereich fuer `Project Repos` und einen manuellen Button `Run Daily Digests`.
+- Der manuelle Digest-Lauf startet die Git-Arbeit im Hintergrund, damit groessere Repos die SwiftUI-Oberflaeche nicht einfrieren.
 - Ein einfacher `DigestScheduler` erkennt verpasste 20:00-Laeufe als App-Hinweis; der echte LaunchAgent ist noch nicht paketiert.
 - `AGENTS.md` wurde auf die neue bunte Devboard-Richtung aktualisiert.
 
@@ -33,9 +35,12 @@
   - `ProjectRepoStore`
   - `GitActivityScanner`
   - `DailyDigestRenderer`
+  - `DailyDigestRunner`
   - `DigestScheduler`
 - `ProjectRepoStore` speichert Repo-Konfiguration lokal als JSON.
+- Repo-Konfigurationen enthalten optionale Security-Scoped Bookmarks; alte gespeicherte Eintraege ohne Bookmark bleiben weiter lesbar.
 - `GitActivityScanner` prueft Git-Worktrees ueber `/usr/bin/git`, ruft Git ohne Shell-String auf und liest Commit-Metadaten plus geaenderte Dateien.
+- `DailyDigestRunner` kapselt den schweren Digest-Lauf, damit die UI ihn per `Task.detached` starten kann.
 - `DailyDigestRenderer` erzeugt selbststaendige HTML-Dateien mit eingebettetem CSS im TurboQuant-Stil.
 - `AppModel.runDailyDigests(now:)` erzeugt pro aktivem Repo und Tag eine HTML-Datei, wenn neue Commits gefunden wurden.
 - Repo-Ordnernamen fuer Digest-Dateien werden sanitisiert und mit einem kurzen Repo-ID-Suffix kollisionsaermer gemacht.
@@ -48,6 +53,7 @@
 - `Sources/DevDashboardFeed/Core/Digests/ProjectRepoStore.swift`
 - `Sources/DevDashboardFeed/Core/Digests/GitActivityScanner.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DailyDigestRenderer.swift`
+- `Sources/DevDashboardFeed/Core/Digests/DailyDigestRunner.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DigestScheduler.swift`
 - `Sources/DevDashboardFeed/Core/Indexing/DocumentScanner.swift`
 - `Sources/DevDashboardFeed/Models/DocumentItem.swift`
@@ -62,8 +68,8 @@
 
 ## Letzte Verifikation
 
-- `swift test` am 2026-04-29 erfolgreich, 19 Tests gruen.
-- `swift build` am 2026-04-29 erfolgreich.
+- `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
+- `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
 - `script/build_and_run.sh --verify` am 2026-04-29 erfolgreich; die App startet als `.app`.
 - Browser-use Visual-QA am 2026-04-29:

@@ -125,7 +125,7 @@ import Testing
     )
 
     try appModel.addProjectRepo(repo)
-    let results = appModel.runDailyDigests(now: Date(timeIntervalSince1970: 1_777_464_000))
+    let results = appModel.runDailyDigestsForTesting(now: Date(timeIntervalSince1970: 1_777_464_000))
 
     #expect(results == [.created(repoName: "timeline", commitCount: 1)])
     #expect(appModel.documents.contains { $0.sourceKind == .dailyDigest && $0.title.contains("timeline") })

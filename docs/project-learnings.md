@@ -25,6 +25,9 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Git sollte ueber `Process` mit Argument-Array aufgerufen werden, nicht ueber zusammengesetzte Shell-Strings. Das haelt Repo-Pfade und Commit-Inhalte deutlich einfacher kontrollierbar.
 - Commit-Inhalte, Dateipfade und Repo-Namen muessen im Digest-HTML escaped werden. Der Renderer darf nie Rohwerte direkt als HTML einsetzen.
 - Fuer Tests mit historischen Commit-Zeitpunkten ist Author-Date wichtig. `git log --since` kann wegen Committer-Date unerwartet sein; deshalb filtert der Scanner die geparsten Author-Dates in Swift.
+- Fuer groessere Repos muss der teure Teil des Git-Scans begrenzt bleiben. Erst `git log --since`, dann Author-Date nachfiltern, und `git show` nur noch fuer die uebrig gebliebenen Commits ausfuehren.
+- Manuelle Digest-Laeufe duerfen nicht synchron auf dem Main Actor laufen. Git-Prozesse und HTML-Dateischreiben gehoeren in einen Hintergrundlauf; die UI aktualisiert danach nur den Status und den Feed.
+- Project-Repos sollten wie watched folders Bookmark-Daten speichern. Nackte Pfade reichen fuer einen lokalen Dev-Flow, aber nicht fuer robuste Restart-/Helper-Szenarien.
 - Ein echter 20:00-Background-Agent sollte nicht vorgetaeuscht werden. Erst die Bundle-/Helper-Struktur klaeren, dann `SMAppService` oder LaunchAgent-Plist sauber anschliessen.
 
 ## Workflow Gotchas

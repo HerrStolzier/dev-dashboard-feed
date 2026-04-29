@@ -25,10 +25,10 @@ struct ContentView: View {
         .frame(minWidth: 980, minHeight: 620)
         .toolbar {
             ToolbarItem {
-                Button("Run Digests") {
+                Button(appModel.isDigestRunInProgress ? "Running..." : "Run Digests") {
                     appModel.runDailyDigests()
                 }
-                .disabled(appModel.projectRepos.filter(\.isActive).isEmpty)
+                .disabled(appModel.projectRepos.filter(\.isActive).isEmpty || appModel.isDigestRunInProgress)
             }
 
             ToolbarItem {

@@ -10,6 +10,7 @@ final class AppModel {
     var projectRepos: [ProjectRepo]
     var folderStatusMessage: String?
     var digestStatusMessage: String?
+    var isDigestRunInProgress: Bool
     let preferredDocumentSelectionID: DocumentItem.ID?
 
     @ObservationIgnored
@@ -28,6 +29,8 @@ final class AppModel {
     private let digestOutputRoot: URL
     @ObservationIgnored
     private let fileManager: FileManager
+    @ObservationIgnored
+    private var activeProjectRepoURLs: [UUID: URL]
 
     init(
         folderAccessController: any FolderAccessControlling = FolderAccessManager.shared,
@@ -49,11 +52,19 @@ final class AppModel {
         self.fileManager = fileManager
         self.digestScheduler = digestScheduler
         self.preferredDocumentSelectionID = launchOverrides.preferredDocumentSelectionID
+        let restoredProjectRepos = Self.restoreProjectRepos(
+            (try? projectRepoStore.load()) ?? [],
+            fileManager: fileManager
+        )
+
         self.folderStatusMessage = nil
         self.digestStatusMessage = nil
+        self.isDigestRunInProgress = false
         self.documents = []
-        self.projectRepos = (try? projectRepoStore.load()) ?? []
+        self.projectRepos = restoredProjectRepos.repos
+        self.activeProjectRepoURLs = restoredProjectRepos.activeURLs
         self.watchedFolders = launchOverrides.watchedFoldersOverride ?? folderAccessController.restoreWatchedFolders()
+        try? projectRepoStore.save(projectRepos)
         updateCatchUpStatus(now: .now)
         reloadDocuments()
     }
@@ -110,16 +121,24 @@ final class AppModel {
         }
 
         do {
-            try addProjectRepo(
-                ProjectRepo(
-                    id: UUID(),
-                    name: selectedURL.lastPathComponent,
-                    path: normalizedPath,
-                    accentColor: nextAccentColor(),
-                    isActive: true,
-                    lastSuccessfulCrawlAt: nil
-                )
+            let bookmarkData = try Self.makeBookmarkData(for: selectedURL)
+            let startedSecurityScope = selectedURL.startAccessingSecurityScopedResource()
+            let repo = ProjectRepo(
+                id: UUID(),
+                name: selectedURL.lastPathComponent,
+                path: normalizedPath,
+                accentColor: nextAccentColor(),
+                isActive: true,
+                lastSuccessfulCrawlAt: nil,
+                bookmarkData: bookmarkData
             )
+
+            try addProjectRepo(
+                repo
+            )
+            if startedSecurityScope {
+                activeProjectRepoURLs[repo.id] = selectedURL
+            }
             digestStatusMessage = "\"\(selectedURL.lastPathComponent)\" is ready for Daily Digests."
         } catch {
             digestStatusMessage = error.localizedDescription
@@ -139,6 +158,10 @@ final class AppModel {
     }
 
     func removeProjectRepo(_ repo: ProjectRepo) {
+        if let activeURL = activeProjectRepoURLs.removeValue(forKey: repo.id) {
+            activeURL.stopAccessingSecurityScopedResource()
+        }
+
         projectRepos.removeAll { $0.id == repo.id }
         do {
             try projectRepoStore.save(projectRepos)
@@ -163,52 +186,45 @@ final class AppModel {
         }
     }
 
-    @discardableResult
-    func runDailyDigests(now: Date = .now) -> [DigestRunResult] {
+    func runDailyDigests(now: Date = .now) {
+        guard !isDigestRunInProgress else {
+            digestStatusMessage = "Daily Digests are already running."
+            return
+        }
+
         guard !projectRepos.isEmpty else {
             digestStatusMessage = "No project repos are configured yet."
-            return []
+            return
         }
 
-        var results: [DigestRunResult] = []
+        isDigestRunInProgress = true
+        digestStatusMessage = "Running Daily Digests..."
 
-        for index in projectRepos.indices {
-            guard projectRepos[index].isActive else {
-                results.append(.skipped(repoName: projectRepos[index].name))
-                continue
-            }
+        let runner = DailyDigestRunner(
+            repos: projectRepos,
+            scanner: gitActivityScanner,
+            renderer: dailyDigestRenderer,
+            digestOutputRoot: digestOutputRoot
+        )
 
-            let repo = projectRepos[index]
-            do {
-                let crawlStart = repo.lastSuccessfulCrawlAt ?? Calendar.current.startOfDay(for: now)
-                let activity = try gitActivityScanner.activity(for: repo, since: crawlStart)
-
-                guard !activity.commits.isEmpty else {
-                    projectRepos[index].lastSuccessfulCrawlAt = now
-                    results.append(.skipped(repoName: repo.name))
-                    continue
-                }
-
-                let html = dailyDigestRenderer.render(activity: activity, generatedAt: now)
-                let digestURL = digestFileURL(for: repo, date: now)
-                try fileManager.createDirectory(at: digestURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-                try Data(html.utf8).write(to: digestURL, options: .atomic)
-                projectRepos[index].lastSuccessfulCrawlAt = now
-                results.append(.created(repoName: repo.name, commitCount: activity.commits.count))
-            } catch {
-                results.append(.failed(repoName: repo.name, message: error.localizedDescription))
-            }
+        Task {
+            let output = await Task.detached(priority: .userInitiated) {
+                runner.run(now: now)
+            }.value
+            finishDigestRun(output)
         }
+    }
 
-        do {
-            try projectRepoStore.save(projectRepos)
-        } catch {
-            results.append(.failed(repoName: "Project Repo Store", message: error.localizedDescription))
-        }
+    @discardableResult
+    func runDailyDigestsForTesting(now: Date = .now) -> [DigestRunResult] {
+        let runner = DailyDigestRunner(
+            repos: projectRepos,
+            scanner: gitActivityScanner,
+            renderer: dailyDigestRenderer,
+            digestOutputRoot: digestOutputRoot
+        )
 
-        digestStatusMessage = makeDigestStatusMessage(from: results)
-        reloadDocuments()
-        return results
+        return finishDigestRun(runner.run(now: now))
     }
 
     func reloadDocuments() {
@@ -253,7 +269,7 @@ final class AppModel {
     private func decorateDigestDocument(_ document: DocumentItem) -> DocumentItem {
         let normalizedPath = document.path.replacingOccurrences(of: "\\", with: "/")
         let matchingRepo = projectRepos.first { repo in
-            let digestDirectoryName = Self.digestDirectoryName(for: repo)
+            let digestDirectoryName = DigestPath.directoryName(for: repo)
             return normalizedPath.hasPrefix(digestDirectoryName + "/")
                 || document.title.localizedCaseInsensitiveContains(repo.name)
                 || document.absolutePath?.contains("/\(digestDirectoryName)/") == true
@@ -274,12 +290,6 @@ final class AppModel {
             accentColor: matchingRepo?.accentColor,
             generatedAt: document.generatedAt
         )
-    }
-
-    private func digestFileURL(for repo: ProjectRepo, date: Date) -> URL {
-        digestOutputRoot
-            .appendingPathComponent(Self.digestDirectoryName(for: repo), isDirectory: true)
-            .appendingPathComponent("\(DateFormatter.devboardFileDay.string(from: date)).html")
     }
 
     private func updateCatchUpStatus(now: Date) {
@@ -320,6 +330,23 @@ final class AppModel {
         }
 
         return "No new committed Git activity was found."
+    }
+
+    @discardableResult
+    private func finishDigestRun(_ output: DailyDigestRunOutput) -> [DigestRunResult] {
+        var results = output.results
+        projectRepos = sortProjectRepos(output.updatedRepos)
+
+        do {
+            try projectRepoStore.save(projectRepos)
+        } catch {
+            results.append(.failed(repoName: "Project Repo Store", message: error.localizedDescription))
+        }
+
+        digestStatusMessage = makeDigestStatusMessage(from: results)
+        isDigestRunInProgress = false
+        reloadDocuments()
+        return results
     }
 
     private func isGitRepository(at path: String) -> Bool {
@@ -366,18 +393,80 @@ final class AppModel {
         }
     }
 
-    private static func digestDirectoryName(for repo: ProjectRepo) -> String {
-        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
-        let scalars = repo.name.unicodeScalars.map { scalar -> Character in
-            allowed.contains(scalar) ? Character(scalar) : "-"
-        }
-        let cleaned = String(scalars)
-            .split(separator: "-")
-            .joined(separator: "-")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    private static func restoreProjectRepos(
+        _ storedRepos: [ProjectRepo],
+        fileManager: FileManager
+    ) -> (repos: [ProjectRepo], activeURLs: [UUID: URL]) {
+        var restoredRepos: [ProjectRepo] = []
+        var activeURLs: [UUID: URL] = [:]
 
-        let stableName = cleaned.isEmpty ? "repo" : cleaned
-        return "\(stableName)-\(repo.id.uuidString.prefix(8))"
+        for var repo in storedRepos {
+            guard let bookmarkData = repo.bookmarkData else {
+                restoredRepos.append(repo)
+                continue
+            }
+
+            do {
+                let (resolvedURL, isStale) = try resolveBookmark(bookmarkData)
+                repo.name = resolvedURL.lastPathComponent
+                repo.path = resolvedURL.standardizedFileURL.path
+                repo.bookmarkData = isStale ? try makeBookmarkData(for: resolvedURL) : bookmarkData
+
+                if fileManager.fileExists(atPath: repo.path),
+                   resolvedURL.startAccessingSecurityScopedResource() {
+                    activeURLs[repo.id] = resolvedURL
+                }
+            } catch {
+                repo.isActive = false
+            }
+
+            restoredRepos.append(repo)
+        }
+
+        return (
+            repos: restoredRepos.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            },
+            activeURLs: activeURLs
+        )
+    }
+
+    private static func makeBookmarkData(for url: URL) throws -> Data {
+        do {
+            return try url.bookmarkData(
+                options: [.withSecurityScope],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        } catch {
+            return try url.bookmarkData(
+                options: [],
+                includingResourceValuesForKeys: nil,
+                relativeTo: nil
+            )
+        }
+    }
+
+    private static func resolveBookmark(_ bookmarkData: Data) throws -> (url: URL, isStale: Bool) {
+        var isStale = false
+
+        do {
+            let resolvedURL = try URL(
+                resolvingBookmarkData: bookmarkData,
+                options: [.withSecurityScope],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+            return (resolvedURL.standardizedFileURL, isStale)
+        } catch {
+            let resolvedURL = try URL(
+                resolvingBookmarkData: bookmarkData,
+                options: [],
+                relativeTo: nil,
+                bookmarkDataIsStale: &isStale
+            )
+            return (resolvedURL.standardizedFileURL, isStale)
+        }
     }
 }
 
@@ -388,4 +477,11 @@ extension DateFormatter {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
+
+    static func devboardFileDayString(from date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.string(from: date)
+    }
 }
