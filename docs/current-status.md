@@ -15,6 +15,7 @@
 - echte Preview-Fixtures mit CSS, SVG und JavaScript angelegt und ueber WebKit automatisiert geprueft
 - Launch-Overrides fuer Testordner und Startdokument eingebaut, damit die Vorschau gezielt mit echten Beispielen hochfahren kann
 - lokales Verzeichnis wieder als Git-Repository auf die Remote-History von `HerrStolzier/dev-dashboard-feed` gelegt
+- lokaler App-Stand wurde auf `origin/main` gepusht; GitHub ist nicht mehr nur im README-/LICENSE-Startstand
 - Remote-`LICENSE` aus dem GitHub-Startstand in den lokalen Arbeitsstand uebernommen
 - README mit dem aktuellen lokalen App-Stand abgeglichen
 
@@ -32,6 +33,7 @@
 - `script/build_and_run.sh` baut jetzt eine lokale `.app`-Bundle-Version und startet sie als echte macOS-App
 - `.codex/environments/environment.toml` bindet den lokalen Run-Button an dieses Script
 - `.git` ist wieder vorhanden und `origin` zeigt auf `https://github.com/HerrStolzier/dev-dashboard-feed.git`
+- `main` trackt `origin/main`
 - Launch-Argumente `--watched-folder` und `--selected-document` koennen eine echte Fixture-Vorschau gezielt beim Start oeffnen
 - unter `Fixtures/PreviewManual` liegen jetzt echte HTML-Beispiele mit relativen CSS-, SVG- und JavaScript-Assets fuer Vorschau-Checks
 - wenn keine beobachteten Ordner vorhanden sind, faellt die App weiter auf Sample-Daten zurueck
@@ -60,6 +62,7 @@
 - `swift build` am 2026-04-29 erfolgreich
 - `swift test` am 2026-04-29 erfolgreich, 15 Tests gruen
 - `./script/build_and_run.sh --verify --watched-folder <fixture-root> --selected-document <fixture-doc>` am 2026-04-29 erfolgreich; die App startet als `.app`
+- GitHub-Remote `origin/main` am 2026-04-29 erfolgreich aktualisiert
 - neue Unit-Tests decken jetzt Preview-Navigation innerhalb/ausserhalb der Read-Access-Wurzel sowie klare Fehlertexte fuer Ladefehler ab
 - neue WebKit-Probe-Tests laden echte Fixture-HTML-Dateien und bestaetigen dabei erfolgreich lokales CSS, JavaScript und SVG-Assets auch aus einem verschachtelten Unterordner
 - ein normaler Desktop-Screenshot war in dieser Terminal-Umgebung nicht verfuegbar, deshalb wurde die Asset-Verifikation ueber offscreen-WebKit statt ueber einen sichtbaren Bildschirmtest abgesichert
