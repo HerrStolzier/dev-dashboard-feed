@@ -3,13 +3,20 @@ import Foundation
 struct DailyDigestCommandResult: Sendable {
     let output: DailyDigestRunOutput
     let storeSaveError: String?
+    let metadataSaveError: String?
 
     var results: [DigestRunResult] {
+        var results = output.results
+
         if let storeSaveError {
-            output.results + [.failed(repoName: "Project Repo Store", message: storeSaveError)]
-        } else {
-            output.results
+            results.append(.failed(repoName: "Project Repo Store", message: storeSaveError))
         }
+
+        if let metadataSaveError {
+            results.append(.failed(repoName: "Digest Metadata Store", message: metadataSaveError))
+        }
+
+        return results
     }
 
     var exitCode: Int32 {
@@ -52,17 +59,53 @@ struct DailyDigestCommand {
 
             do {
                 try runtime.projectRepoStore.save(output.updatedRepos)
-                return DailyDigestCommandResult(output: output, storeSaveError: nil)
+                let metadataSaveError = saveMetadata(for: output, now: now)
+                return DailyDigestCommandResult(
+                    output: output,
+                    storeSaveError: nil,
+                    metadataSaveError: metadataSaveError
+                )
             } catch {
-                return DailyDigestCommandResult(output: output, storeSaveError: error.localizedDescription)
+                let metadataSaveError = saveMetadata(for: output, now: now)
+                return DailyDigestCommandResult(
+                    output: output,
+                    storeSaveError: error.localizedDescription,
+                    metadataSaveError: metadataSaveError
+                )
             }
         } catch {
             return DailyDigestCommandResult(
                 output: DailyDigestRunOutput(updatedRepos: [], results: [
                     .failed(repoName: "Project Repo Store", message: error.localizedDescription),
                 ]),
-                storeSaveError: nil
+                storeSaveError: nil,
+                metadataSaveError: nil
             )
+        }
+    }
+
+    private func saveMetadata(for output: DailyDigestRunOutput, now: Date) -> String? {
+        var metadata = (try? runtime.metadataStore.load()) ?? .empty
+        let failures = output.results.compactMap { result -> String? in
+            if case .failed(let repoName, let message) = result {
+                return "\(repoName): \(message)"
+            }
+            return nil
+        }
+
+        metadata.lastRunAt = now
+        metadata.lastErrorMessage = failures.isEmpty ? nil : failures.joined(separator: "\n")
+        metadata.nextScheduledRunAt = DigestScheduler().nextScheduledRun(after: now)
+
+        if failures.isEmpty {
+            metadata.lastSuccessfulRunAt = now
+        }
+
+        do {
+            try runtime.metadataStore.save(metadata)
+            return nil
+        } catch {
+            return error.localizedDescription
         }
     }
 }

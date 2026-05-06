@@ -33,6 +33,10 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Agent-Kommandos muessen ohne `open` laufen, damit stdout/stderr und Exit-Code pruefbar bleiben.
 - LaunchAgent-Plists sollten `ProgramArguments` mit absoluten Pfaden und eine minimale `EnvironmentVariables`-Umgebung setzen. Beim Installieren aus einem Terminal kann `launchctl print` trotzdem geerbte Domain-Umgebung anzeigen; sensible Terminal-Umgebung beim Bootstrap vermeiden.
 - Agent-Tests sollten immer Install, `launchctl print`, Kickstart und Uninstall enthalten. Sonst prueft man nur die Plist-Datei, nicht den echten launchd-Pfad.
+- Persistente Digest-Run-Metadaten sind fuer Background-Agenten wichtig. Ohne letzten Lauf, letzten Erfolg, naechsten Planlauf und letzten Fehler ist die Automatik fuer den Nutzer praktisch unsichtbar.
+- CLI-Pfad-Overrides fuer Repo-Store, Digest-Output und Metadata-Store machen Agent-Integrationstests sicherer, weil echte lokale App-Daten nicht beruehrt werden.
+- Ein temporaeres Git-Repo als End-to-End-Test ist der beste kleine Realitaetscheck fuer den Digest-Agenten: Git, Store, Renderer und Metadata-Update laufen dabei gemeinsam durch.
+- Browser-use Visual-QA ist fuer HTML-Renderer wertvoll, aber nicht gleichwertig mit Content-Pruefungen. Wenn der Browser-Use Node-RePL nicht verfuegbar ist, sollten wenigstens HTML-Inhalt, CSS-Signaturen und erzeugte Artefaktpfade automatisch geprueft werden.
 
 ## Workflow Gotchas
 

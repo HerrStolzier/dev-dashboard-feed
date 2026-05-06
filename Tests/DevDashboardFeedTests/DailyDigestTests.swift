@@ -31,6 +31,23 @@ import Testing
     #expect(DigestRuntime.defaultLogDirectory(fileManager: fileManager).path.contains("DevDashboardFeed/Logs"))
 }
 
+@Test func digestRunMetadataStorePersistsRunState() async throws {
+    let storeURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathComponent("metadata.json")
+    let store = DigestRunMetadataStore(storeURL: storeURL)
+    let metadata = DigestRunMetadata(
+        lastRunAt: Date(timeIntervalSince1970: 1_778_096_800),
+        lastSuccessfulRunAt: Date(timeIntervalSince1970: 1_778_096_800),
+        lastErrorMessage: nil,
+        nextScheduledRunAt: Date(timeIntervalSince1970: 1_778_183_200)
+    )
+
+    try store.save(metadata)
+
+    #expect(try store.load() == metadata)
+}
+
 @Test func gitActivityScannerReadsCommitsSinceDate() async throws {
     let repoURL = try makeTemporaryGitRepo()
     try runGit(["config", "user.name", "Devboard Test"], in: repoURL)
@@ -169,6 +186,9 @@ import Testing
     let command = DailyDigestCommand(
         runtime: DigestRuntime(
             projectRepoStore: store,
+            metadataStore: DigestRunMetadataStore(
+                storeURL: tempRoot.appendingPathComponent("metadata.json")
+            ),
             scanner: ConditionalGitActivityScanner(
                 activity: GitRepoActivity(
                     repo: goodRepo,
@@ -191,12 +211,19 @@ import Testing
 
     let result = command.run(now: Date(timeIntervalSince1970: 1_778_096_800))
     let restoredRepos = try store.load()
+    let restoredMetadata = try DigestRunMetadataStore(
+        storeURL: tempRoot.appendingPathComponent("metadata.json")
+    ).load()
 
     #expect(result.results.contains(.created(repoName: "good", commitCount: 1)))
     #expect(result.results.contains(.failed(repoName: "failing", message: "scanner failed")))
     #expect(result.exitCode == 1)
     #expect(restoredRepos.first(where: { $0.id == goodRepo.id })?.lastSuccessfulCrawlAt == Date(timeIntervalSince1970: 1_778_096_800))
     #expect(restoredRepos.first(where: { $0.id == failingRepo.id })?.lastSuccessfulCrawlAt == nil)
+    #expect(restoredMetadata.lastRunAt == Date(timeIntervalSince1970: 1_778_096_800))
+    #expect(restoredMetadata.lastSuccessfulRunAt == nil)
+    #expect(restoredMetadata.lastErrorMessage == "failing: scanner failed")
+    #expect(restoredMetadata.nextScheduledRunAt != nil)
 }
 
 @Test func digestLaunchAgentPlistUsesEightPmCalendarInterval() async throws {

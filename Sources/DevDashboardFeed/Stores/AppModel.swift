@@ -11,6 +11,8 @@ final class AppModel {
     var folderStatusMessage: String?
     var digestStatusMessage: String?
     var backgroundAgentStatusMessage: String?
+    var digestRunMetadata: DigestRunMetadata
+    var missedScheduledRunAt: Date?
     var isDigestRunInProgress: Bool
     let preferredDocumentSelectionID: DocumentItem.ID?
 
@@ -20,6 +22,8 @@ final class AppModel {
     private let documentScanner: any DocumentScanning
     @ObservationIgnored
     private let projectRepoStore: ProjectRepoStore
+    @ObservationIgnored
+    private let metadataStore: DigestRunMetadataStore
     @ObservationIgnored
     private let gitActivityScanner: any GitActivityScanning
     @ObservationIgnored
@@ -41,6 +45,7 @@ final class AppModel {
         folderAccessController: any FolderAccessControlling = FolderAccessManager.shared,
         documentScanner: any DocumentScanning = DocumentScanner(),
         projectRepoStore: ProjectRepoStore = ProjectRepoStore(),
+        metadataStore: DigestRunMetadataStore = DigestRunMetadataStore(),
         gitActivityScanner: any GitActivityScanning = GitActivityScanner(),
         dailyDigestRenderer: DailyDigestRenderer = DailyDigestRenderer(),
         digestOutputRoot: URL = AppModel.defaultDigestOutputRoot(),
@@ -53,6 +58,7 @@ final class AppModel {
         self.folderAccessController = folderAccessController
         self.documentScanner = documentScanner
         self.projectRepoStore = projectRepoStore
+        self.metadataStore = metadataStore
         self.gitActivityScanner = gitActivityScanner
         self.dailyDigestRenderer = dailyDigestRenderer
         self.digestOutputRoot = digestOutputRoot
@@ -62,10 +68,14 @@ final class AppModel {
         self.digestScheduler = digestScheduler
         self.preferredDocumentSelectionID = launchOverrides.preferredDocumentSelectionID
         let restoredProjectRepos = projectRepoAccess.restore((try? projectRepoStore.load()) ?? [])
+        var loadedMetadata = (try? metadataStore.load()) ?? .empty
+        loadedMetadata.nextScheduledRunAt = digestScheduler.nextScheduledRun(after: .now)
 
         self.folderStatusMessage = nil
         self.digestStatusMessage = nil
         self.backgroundAgentStatusMessage = nil
+        self.digestRunMetadata = loadedMetadata
+        self.missedScheduledRunAt = nil
         self.isDigestRunInProgress = false
         self.documents = []
         self.projectRepos = restoredProjectRepos.repos
@@ -218,7 +228,7 @@ final class AppModel {
             let output = await Task.detached(priority: .userInitiated) {
                 runner.run(now: now)
             }.value
-            finishDigestRun(output)
+            finishDigestRun(output, now: now)
         }
     }
 
@@ -267,7 +277,7 @@ final class AppModel {
             digestOutputRoot: digestOutputRoot
         )
 
-        return finishDigestRun(runner.run(now: now))
+        return finishDigestRun(runner.run(now: now), now: now)
     }
 
     func reloadDocuments() {
@@ -336,9 +346,13 @@ final class AppModel {
             return
         }
 
-        let lastRun = projectRepos.compactMap(\.lastSuccessfulCrawlAt).max()
-        if digestScheduler.missedScheduledRun(lastSuccessfulRunAt: lastRun, now: now) != nil {
-            digestStatusMessage = "A scheduled 20:00 digest run was missed. You can run Daily Digests now to catch up."
+        let lastRun = digestRunMetadata.lastSuccessfulRunAt
+            ?? projectRepos.compactMap(\.lastSuccessfulCrawlAt).max()
+        if let missedRun = digestScheduler.missedScheduledRun(lastSuccessfulRunAt: lastRun, now: now) {
+            missedScheduledRunAt = missedRun
+            digestStatusMessage = "The scheduled 20:00 digest from \(DateFormatter.devboardDayAndTime.string(from: missedRun)) was missed. You can run Daily Digests now to catch up."
+        } else {
+            missedScheduledRunAt = nil
         }
     }
 
@@ -372,7 +386,7 @@ final class AppModel {
     }
 
     @discardableResult
-    private func finishDigestRun(_ output: DailyDigestRunOutput) -> [DigestRunResult] {
+    private func finishDigestRun(_ output: DailyDigestRunOutput, now: Date = .now) -> [DigestRunResult] {
         var results = output.results
         projectRepos = sortProjectRepos(output.updatedRepos)
 
@@ -384,8 +398,33 @@ final class AppModel {
 
         digestStatusMessage = makeDigestStatusMessage(from: results)
         isDigestRunInProgress = false
+        updateDigestRunMetadata(after: results, now: now)
         reloadDocuments()
         return results
+    }
+
+    private func updateDigestRunMetadata(after results: [DigestRunResult], now: Date = .now) {
+        let failures = results.compactMap { result -> String? in
+            if case .failed(let repoName, let message) = result {
+                return "\(repoName): \(message)"
+            }
+            return nil
+        }
+
+        digestRunMetadata.lastRunAt = now
+        digestRunMetadata.lastErrorMessage = failures.isEmpty ? nil : failures.joined(separator: "\n")
+        digestRunMetadata.nextScheduledRunAt = digestScheduler.nextScheduledRun(after: now)
+
+        if failures.isEmpty {
+            digestRunMetadata.lastSuccessfulRunAt = now
+            missedScheduledRunAt = nil
+        }
+
+        do {
+            try metadataStore.save(digestRunMetadata)
+        } catch {
+            digestStatusMessage = "\(digestStatusMessage ?? "Daily Digest run finished.") Metadata could not be saved: \(error.localizedDescription)"
+        }
     }
 
     private func isGitRepository(at path: String) -> Bool {
@@ -448,4 +487,12 @@ extension DateFormatter {
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: date)
     }
+
+    static let devboardDayAndTime: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }

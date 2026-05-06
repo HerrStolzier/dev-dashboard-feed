@@ -28,12 +28,29 @@ enum DigestCLI {
             exit(2)
         }
 
-        let result = DailyDigestCommand().run(now: launchOverrides.digestNow ?? .now)
+        let result = DailyDigestCommand(runtime: runtime(from: launchOverrides)).run(now: launchOverrides.digestNow ?? .now)
         if !launchOverrides.quiet {
             print(summary(for: result.results))
         }
 
         exit(result.exitCode)
+    }
+
+    private static func runtime(from launchOverrides: LaunchOverrides) -> DigestRuntime {
+        let projectRepoStore = launchOverrides.projectRepoStoreURL
+            .map { ProjectRepoStore(storeURL: $0) }
+            ?? ProjectRepoStore()
+        let metadataStore = launchOverrides.digestMetadataStoreURL
+            .map { DigestRunMetadataStore(storeURL: $0) }
+            ?? DigestRunMetadataStore()
+        let digestOutputRoot = launchOverrides.digestOutputRootURL
+            ?? DigestRuntime.defaultDigestOutputRoot()
+
+        return DigestRuntime(
+            projectRepoStore: projectRepoStore,
+            metadataStore: metadataStore,
+            digestOutputRoot: digestOutputRoot
+        )
     }
 
     private static func runAgentInstall(quiet: Bool) -> Never {

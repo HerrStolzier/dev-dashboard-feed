@@ -4,6 +4,9 @@ struct LaunchOverrides {
     private let watchedFolderPath: String?
     private let selectedDocumentPath: String?
     private let digestNowValue: String?
+    private let projectRepoStorePath: String?
+    private let digestOutputRootPath: String?
+    private let digestMetadataStorePath: String?
     private let fileManager: FileManager
     let shouldRunDigestsOnce: Bool
     let quiet: Bool
@@ -16,6 +19,9 @@ struct LaunchOverrides {
         self.watchedFolderPath = LaunchOverrides.value(for: "--watched-folder", in: arguments)
         self.selectedDocumentPath = LaunchOverrides.value(for: "--selected-document", in: arguments)
         self.digestNowValue = LaunchOverrides.value(for: "--digest-now", in: arguments)
+        self.projectRepoStorePath = LaunchOverrides.value(for: "--project-repo-store", in: arguments)
+        self.digestOutputRootPath = LaunchOverrides.value(for: "--digest-output-root", in: arguments)
+        self.digestMetadataStorePath = LaunchOverrides.value(for: "--digest-metadata-store", in: arguments)
         self.shouldRunDigestsOnce = arguments.contains("--run-digests-once")
         self.quiet = arguments.contains("--quiet")
         self.fileManager = fileManager
@@ -58,6 +64,18 @@ struct LaunchOverrides {
         return ISO8601DateFormatter.devboardDate(from: digestNowValue)
     }
 
+    var projectRepoStoreURL: URL? {
+        normalizedWritableFileURL(from: projectRepoStorePath)
+    }
+
+    var digestOutputRootURL: URL? {
+        normalizedWritableDirectoryURL(from: digestOutputRootPath)
+    }
+
+    var digestMetadataStoreURL: URL? {
+        normalizedWritableFileURL(from: digestMetadataStorePath)
+    }
+
     private var watchedFolderURL: URL? {
         normalizedDirectoryURL(from: watchedFolderPath)
     }
@@ -90,6 +108,22 @@ struct LaunchOverrides {
         }
 
         return url
+    }
+
+    private func normalizedWritableFileURL(from path: String?) -> URL? {
+        guard let path, !path.isEmpty else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: path).standardizedFileURL
+    }
+
+    private func normalizedWritableDirectoryURL(from path: String?) -> URL? {
+        guard let path, !path.isEmpty else {
+            return nil
+        }
+
+        return URL(fileURLWithPath: path, isDirectory: true).standardizedFileURL
     }
 
     private static func value(for flag: String, in arguments: [String]) -> String? {

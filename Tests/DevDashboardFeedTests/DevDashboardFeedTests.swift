@@ -182,6 +182,21 @@ import WebKit
     #expect(overrides.parseError == "--digest-now could not parse date: not-a-date")
 }
 
+@Test func launchOverridesReadDigestTestPaths() async throws {
+    let overrides = LaunchOverrides(
+        arguments: [
+            "DevDashboardFeed",
+            "--project-repo-store", "/tmp/devboard/repos.json",
+            "--digest-output-root", "/tmp/devboard/digests",
+            "--digest-metadata-store", "/tmp/devboard/metadata.json",
+        ]
+    )
+
+    #expect(overrides.projectRepoStoreURL?.path == "/tmp/devboard/repos.json")
+    #expect(overrides.digestOutputRootURL?.path == "/tmp/devboard/digests")
+    #expect(overrides.digestMetadataStoreURL?.path == "/tmp/devboard/metadata.json")
+}
+
 @MainActor
 @Test func appModelLoadsScannerDocumentsWhenFoldersExist() async throws {
     let folder = WatchedFolder(

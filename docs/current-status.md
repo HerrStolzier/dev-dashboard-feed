@@ -1,6 +1,6 @@
 # Current Status
 
-## Stand vom 2026-04-29
+## Stand vom 2026-05-06
 
 ## Zuletzt abgeschlossen
 
@@ -10,6 +10,12 @@
   - LaunchAgent-Plist mit `StartCalendarInterval` fuer 20:00
   - Install/Uninstall/Kickstart ueber App-Settings und `script/build_and_run.sh`
   - Agent-Programmumgebung explizit auf einen minimalen `PATH` gesetzt
+- Naechste Agent-Iteration umgesetzt:
+  - persistente Digest-Run-Metadaten fuer letzter Lauf, letzter Erfolg, letzter Fehler und naechster geplanter Lauf
+  - Settings zeigt diese Metadaten in der Daily-Digest-Automation-Sektion
+  - verpasste 20:00-Laeufe werden konkreter mit Datum/Uhrzeit angezeigt
+  - CLI-Testpfade fuer Repo-Store, Digest-Output und Metadata-Store
+  - End-to-End-Script `script/verify_daily_digest_agent.sh` gegen ein temporaeres Git-Repo
 - Weiterentwicklungsplan fuer den echten 20:00-Daily-Digest-Background-Agent erstellt: `daily-digest-background-agent-plan.md`.
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
@@ -21,7 +27,7 @@
 - Der Feed zeigt Daily Digests als farbige Social Cards mit Projektakzent und eigener Quellenart.
 - Settings haben jetzt einen Bereich fuer `Project Repos` und einen manuellen Button `Run Daily Digests`.
 - Der manuelle Digest-Lauf startet die Git-Arbeit im Hintergrund, damit groessere Repos die SwiftUI-Oberflaeche nicht einfrieren.
-- Ein einfacher `DigestScheduler` erkennt verpasste 20:00-Laeufe als App-Hinweis; der echte LaunchAgent ist noch nicht paketiert.
+- Ein einfacher `DigestScheduler` erkennt verpasste 20:00-Laeufe als App-Hinweis; der LaunchAgent-MVP kann installiert, entfernt und testweise gestartet werden.
 - `AGENTS.md` wurde auf die neue bunte Devboard-Richtung aktualisiert.
 
 ## Was jetzt im Repo wirklich existiert
@@ -50,8 +56,11 @@
   - `DigestLaunchAgentPlist`
   - `DigestLaunchAgentInstaller`
   - `DigestBackgroundService`
+  - `DigestRunMetadataStore`
 - `DigestCLI` verzweigt beim Start frueh fuer `--run-digests-once`, `--install-digest-agent`, `--uninstall-digest-agent` und `--kickstart-digest-agent`.
+- `DigestCLI` kann fuer Tests isolierte Pfade ueber `--project-repo-store`, `--digest-output-root` und `--digest-metadata-store` verwenden.
 - `script/build_and_run.sh` kann jetzt `digest-once`, `install-agent`, `kickstart-agent` und `uninstall-agent`.
+- `script/verify_daily_digest_agent.sh` baut ein temporaeres Git-Repo, laesst den CLI-Digest laufen und prueft das erzeugte TurboQuant-HTML.
 - `ProjectRepoStore` speichert Repo-Konfiguration lokal als JSON.
 - Repo-Konfigurationen enthalten optionale Security-Scoped Bookmarks; alte gespeicherte Eintraege ohne Bookmark bleiben weiter lesbar.
 - `GitActivityScanner` prueft Git-Worktrees ueber `/usr/bin/git`, ruft Git ohne Shell-String auf und liest Commit-Metadaten plus geaenderte Dateien.
@@ -71,6 +80,7 @@
 - `Sources/DevDashboardFeed/Core/Digests/DigestRuntime.swift`
 - `Sources/DevDashboardFeed/Core/Digests/ProjectRepoAccess.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DailyDigestCommand.swift`
+- `Sources/DevDashboardFeed/Core/Digests/DigestRunMetadataStore.swift`
 - `Sources/DevDashboardFeed/Core/Digests/ProjectRepoStore.swift`
 - `Sources/DevDashboardFeed/Core/Digests/GitActivityScanner.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DailyDigestRenderer.swift`
@@ -83,12 +93,14 @@
 - `Sources/DevDashboardFeed/Models/DocumentItem.swift`
 - `Sources/DevDashboardFeed/Models/ProjectRepo.swift`
 - `Sources/DevDashboardFeed/Models/DailyDigest.swift`
+- `Sources/DevDashboardFeed/Models/DigestRunMetadata.swift`
 - `Sources/DevDashboardFeed/Models/DocumentSourceKind.swift`
 - `Sources/DevDashboardFeed/Features/Settings/SettingsView.swift`
 - `Sources/DevDashboardFeed/Features/Feed/FeedCardView.swift`
 - `Sources/DevDashboardFeed/Features/Detail/DocumentDetailView.swift`
 - `Tests/DevDashboardFeedTests/DailyDigestTests.swift`
 - `Tests/DevDashboardFeedTests/DevDashboardFeedTests.swift`
+- `script/verify_daily_digest_agent.sh`
 
 ## Letzte Verifikation
 
@@ -104,6 +116,13 @@
   - `script/build_and_run.sh uninstall-agent` erfolgreich; Plist wurde wieder entfernt.
   - `script/build_and_run.sh --verify` erfolgreich; die App startet als `.app`.
   - Nach der Verifikation ist der Test-LaunchAgent nicht installiert.
+- Weitere Umsetzung am 2026-05-06:
+  - `swift test` erfolgreich, 27 Tests gruen.
+  - `script/verify_daily_digest_agent.sh` erfolgreich; temporaeres Git-Repo erzeugte ein Digest-HTML mit Commit-Inhalt und TurboQuant-CSS.
+  - `swift build` erfolgreich.
+  - `script/build_and_run.sh --verify` erfolgreich.
+  - `git diff --check` erfolgreich.
+  - Nach der Verifikation ist weiterhin kein Test-LaunchAgent installiert.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -122,12 +141,14 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 
 - danach entscheiden, ob der LaunchAgent-MVP reicht oder ob ein eingebetteter Helper mit `SMAppService` wirklich benoetigt wird
 - `SMAppService` nur einbauen, wenn die Bundle-Struktur dafuer wirklich passt
-- Nachhol-Lauf im App-Start sichtbarer machen, ohne automatisch unbemerkt Git-Scans loszutreten
+- Browser-use/visuelle QA fuer ein Agent- oder Script-erzeugtes Digest-HTML nachholen, sobald der Browser-Use Node-RePL verfuegbar ist
 
 ## Offene Luecken und Risiken
 
 - Der lokale LaunchAgent-MVP ist implementiert und testbar, aber noch kein eingebetteter `SMAppService`-Helper.
+- Persistente Run-Metadaten existieren, aber es gibt noch keine detaillierte Run-Historie pro Repo.
 - `launchctl print` zeigt im Diagnosekontext auch geerbte Domain-Umgebung; die eigentliche Agent-Plist setzt einen minimalen `PATH`, aber sensible Terminal-Umgebung sollte beim Installieren trotzdem vermieden werden.
+- Browser-use Visual-QA fuer die neue Agent-E2E-Datei wurde in dieser Runde nicht ausgefuehrt, weil der benoetigte Node-RePL nach Tool-Discovery nicht verfuegbar war.
 - File-Watcher fuer automatische Aktualisierung beobachteter HTML-Ordner fehlt weiterhin.
 - Sehr grosse Git-Historien koennen beim ersten Tageslauf noch teuer werden, auch wenn der Default-Cutoff jetzt Tagesanfang ist.
 - Mehrere Repos mit gleichem Namen sind durch ID-Suffixe im Digest-Pfad besser getrennt, aber die UI zeigt noch keine explizite Kollisionshilfe.

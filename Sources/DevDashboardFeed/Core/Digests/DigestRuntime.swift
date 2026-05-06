@@ -2,6 +2,7 @@ import Foundation
 
 struct DigestRuntime {
     let projectRepoStore: ProjectRepoStore
+    let metadataStore: DigestRunMetadataStore
     let scanner: any GitActivityScanning
     let renderer: DailyDigestRenderer
     let digestOutputRoot: URL
@@ -9,12 +10,14 @@ struct DigestRuntime {
 
     init(
         projectRepoStore: ProjectRepoStore = ProjectRepoStore(),
+        metadataStore: DigestRunMetadataStore = DigestRunMetadataStore(),
         scanner: any GitActivityScanning = GitActivityScanner(),
         renderer: DailyDigestRenderer = DailyDigestRenderer(),
         digestOutputRoot: URL = DigestRuntime.defaultDigestOutputRoot(),
         fileManager: FileManager = .default
     ) {
         self.projectRepoStore = projectRepoStore
+        self.metadataStore = metadataStore
         self.scanner = scanner
         self.renderer = renderer
         self.digestOutputRoot = digestOutputRoot

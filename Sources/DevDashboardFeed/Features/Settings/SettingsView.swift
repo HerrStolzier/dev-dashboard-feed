@@ -128,6 +128,25 @@ struct SettingsView: View {
                 Text("The first automation path uses a local LaunchAgent that starts Devboard with --run-digests-once --quiet at 20:00.")
                     .foregroundStyle(.secondary)
 
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(appModel.digestRunMetadata.lastRunAt.map { "Last run: \(DateFormatter.devboardDayAndTime.string(from: $0))" } ?? "Last run: never")
+                    Text(appModel.digestRunMetadata.lastSuccessfulRunAt.map { "Last success: \(DateFormatter.devboardDayAndTime.string(from: $0))" } ?? "Last success: never")
+                    Text(appModel.digestRunMetadata.nextScheduledRunAt.map { "Next scheduled run: \(DateFormatter.devboardDayAndTime.string(from: $0))" } ?? "Next scheduled run: not known")
+
+                    if let missedScheduledRunAt = appModel.missedScheduledRunAt {
+                        Text("Missed run: \(DateFormatter.devboardDayAndTime.string(from: missedScheduledRunAt))")
+                            .foregroundStyle(.orange)
+                    }
+
+                    if let lastErrorMessage = appModel.digestRunMetadata.lastErrorMessage {
+                        Text("Last error: \(lastErrorMessage)")
+                            .foregroundStyle(.orange)
+                            .textSelection(.enabled)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
                 HStack {
                     Button(appModel.isBackgroundAgentInstalled ? "Reinstall Agent" : "Install 20:00 Agent") {
                         appModel.installBackgroundAgent()
