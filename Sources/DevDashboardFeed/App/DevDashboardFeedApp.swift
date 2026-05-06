@@ -2,7 +2,12 @@ import SwiftUI
 
 @main
 struct DevDashboardFeedApp: App {
-    @State private var appModel = AppModel()
+    @State private var appModel: AppModel
+
+    init() {
+        DigestCLI.runIfRequested()
+        _appModel = State(wrappedValue: AppModel())
+    }
 
     var body: some Scene {
         WindowGroup("Dev Dashboard Feed") {

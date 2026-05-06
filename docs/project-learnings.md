@@ -29,6 +29,10 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Manuelle Digest-Laeufe duerfen nicht synchron auf dem Main Actor laufen. Git-Prozesse und HTML-Dateischreiben gehoeren in einen Hintergrundlauf; die UI aktualisiert danach nur den Status und den Feed.
 - Project-Repos sollten wie watched folders Bookmark-Daten speichern. Nackte Pfade reichen fuer einen lokalen Dev-Flow, aber nicht fuer robuste Restart-/Helper-Szenarien.
 - Ein echter 20:00-Background-Agent sollte nicht vorgetaeuscht werden. Erst die Bundle-/Helper-Struktur klaeren, dann `SMAppService` oder LaunchAgent-Plist sauber anschliessen.
+- Fuer den privaten MVP ist ein LaunchAgent plus `--run-digests-once` der stabilere erste Automatikpfad als sofort ein eingebetteter `SMAppService`-Helper.
+- Agent-Kommandos muessen ohne `open` laufen, damit stdout/stderr und Exit-Code pruefbar bleiben.
+- LaunchAgent-Plists sollten `ProgramArguments` mit absoluten Pfaden und eine minimale `EnvironmentVariables`-Umgebung setzen. Beim Installieren aus einem Terminal kann `launchctl print` trotzdem geerbte Domain-Umgebung anzeigen; sensible Terminal-Umgebung beim Bootstrap vermeiden.
+- Agent-Tests sollten immer Install, `launchctl print`, Kickstart und Uninstall enthalten. Sonst prueft man nur die Plist-Datei, nicht den echten launchd-Pfad.
 
 ## Workflow Gotchas
 

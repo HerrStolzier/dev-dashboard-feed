@@ -118,6 +118,41 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Daily Digest Automation") {
+                Label(
+                    appModel.isBackgroundAgentInstalled ? "20:00 agent installed" : "20:00 agent not installed",
+                    systemImage: appModel.isBackgroundAgentInstalled ? "clock.badge.checkmark" : "clock.badge.exclamationmark"
+                )
+                .foregroundStyle(appModel.isBackgroundAgentInstalled ? Color.secondary : Color.orange)
+
+                Text("The first automation path uses a local LaunchAgent that starts Devboard with --run-digests-once --quiet at 20:00.")
+                    .foregroundStyle(.secondary)
+
+                HStack {
+                    Button(appModel.isBackgroundAgentInstalled ? "Reinstall Agent" : "Install 20:00 Agent") {
+                        appModel.installBackgroundAgent()
+                    }
+
+                    Button("Run Agent Now") {
+                        appModel.kickstartBackgroundAgent()
+                    }
+                    .disabled(!appModel.isBackgroundAgentInstalled)
+
+                    Button("Remove Agent", role: .destructive) {
+                        appModel.uninstallBackgroundAgent()
+                    }
+                    .disabled(!appModel.isBackgroundAgentInstalled)
+                }
+            }
+
+            if let backgroundAgentStatusMessage = appModel.backgroundAgentStatusMessage {
+                Section("Agent status") {
+                    Text(backgroundAgentStatusMessage)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+            }
+
             Section("Product stance") {
                 Text("Local-first")
                 Text("HTML files stay untouched")

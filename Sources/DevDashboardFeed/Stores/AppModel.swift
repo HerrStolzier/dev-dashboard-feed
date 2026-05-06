@@ -10,6 +10,7 @@ final class AppModel {
     var projectRepos: [ProjectRepo]
     var folderStatusMessage: String?
     var digestStatusMessage: String?
+    var backgroundAgentStatusMessage: String?
     var isDigestRunInProgress: Bool
     let preferredDocumentSelectionID: DocumentItem.ID?
 
@@ -30,6 +31,10 @@ final class AppModel {
     @ObservationIgnored
     private let fileManager: FileManager
     @ObservationIgnored
+    private let projectRepoAccess: ProjectRepoAccess
+    @ObservationIgnored
+    private let backgroundService: DigestBackgroundService
+    @ObservationIgnored
     private var activeProjectRepoURLs: [UUID: URL]
 
     init(
@@ -41,7 +46,9 @@ final class AppModel {
         digestOutputRoot: URL = AppModel.defaultDigestOutputRoot(),
         fileManager: FileManager = .default,
         launchOverrides: LaunchOverrides = LaunchOverrides(),
-        digestScheduler: DigestScheduler = DigestScheduler()
+        digestScheduler: DigestScheduler = DigestScheduler(),
+        projectRepoAccess: ProjectRepoAccess = ProjectRepoAccess(),
+        backgroundService: DigestBackgroundService = DigestBackgroundService()
     ) {
         self.folderAccessController = folderAccessController
         self.documentScanner = documentScanner
@@ -50,15 +57,15 @@ final class AppModel {
         self.dailyDigestRenderer = dailyDigestRenderer
         self.digestOutputRoot = digestOutputRoot
         self.fileManager = fileManager
+        self.projectRepoAccess = projectRepoAccess
+        self.backgroundService = backgroundService
         self.digestScheduler = digestScheduler
         self.preferredDocumentSelectionID = launchOverrides.preferredDocumentSelectionID
-        let restoredProjectRepos = Self.restoreProjectRepos(
-            (try? projectRepoStore.load()) ?? [],
-            fileManager: fileManager
-        )
+        let restoredProjectRepos = projectRepoAccess.restore((try? projectRepoStore.load()) ?? [])
 
         self.folderStatusMessage = nil
         self.digestStatusMessage = nil
+        self.backgroundAgentStatusMessage = nil
         self.isDigestRunInProgress = false
         self.documents = []
         self.projectRepos = restoredProjectRepos.repos
@@ -121,7 +128,7 @@ final class AppModel {
         }
 
         do {
-            let bookmarkData = try Self.makeBookmarkData(for: selectedURL)
+            let bookmarkData = try projectRepoAccess.makeBookmarkData(for: selectedURL)
             let startedSecurityScope = selectedURL.startAccessingSecurityScopedResource()
             let repo = ProjectRepo(
                 id: UUID(),
@@ -215,6 +222,42 @@ final class AppModel {
         }
     }
 
+    var isBackgroundAgentInstalled: Bool {
+        backgroundService.status == .installed
+    }
+
+    func installBackgroundAgent() {
+        guard let executableURL = Bundle.main.executableURL else {
+            backgroundAgentStatusMessage = "Devboard could not find its executable for the background agent."
+            return
+        }
+
+        do {
+            let plistURL = try backgroundService.install(executableURL: executableURL)
+            backgroundAgentStatusMessage = "Daily Digest agent installed at \(plistURL.path)."
+        } catch {
+            backgroundAgentStatusMessage = error.localizedDescription
+        }
+    }
+
+    func uninstallBackgroundAgent() {
+        do {
+            try backgroundService.uninstall()
+            backgroundAgentStatusMessage = "Daily Digest agent was removed."
+        } catch {
+            backgroundAgentStatusMessage = error.localizedDescription
+        }
+    }
+
+    func kickstartBackgroundAgent() {
+        do {
+            try backgroundService.kickstart()
+            backgroundAgentStatusMessage = "Daily Digest agent was started once."
+        } catch {
+            backgroundAgentStatusMessage = error.localizedDescription
+        }
+    }
+
     @discardableResult
     func runDailyDigestsForTesting(now: Date = .now) -> [DigestRunResult] {
         let runner = DailyDigestRunner(
@@ -241,11 +284,7 @@ final class AppModel {
     }
 
     static func defaultDigestOutputRoot(fileManager: FileManager = .default) -> URL {
-        let baseURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? fileManager.temporaryDirectory
-        return baseURL
-            .appendingPathComponent("DevDashboardFeed", isDirectory: true)
-            .appendingPathComponent("DailyDigests", isDirectory: true)
+        DigestRuntime.defaultDigestOutputRoot(fileManager: fileManager)
     }
 
     private func decoratedDigestDocuments() -> [DocumentItem] {
@@ -393,81 +432,6 @@ final class AppModel {
         }
     }
 
-    private static func restoreProjectRepos(
-        _ storedRepos: [ProjectRepo],
-        fileManager: FileManager
-    ) -> (repos: [ProjectRepo], activeURLs: [UUID: URL]) {
-        var restoredRepos: [ProjectRepo] = []
-        var activeURLs: [UUID: URL] = [:]
-
-        for var repo in storedRepos {
-            guard let bookmarkData = repo.bookmarkData else {
-                restoredRepos.append(repo)
-                continue
-            }
-
-            do {
-                let (resolvedURL, isStale) = try resolveBookmark(bookmarkData)
-                repo.name = resolvedURL.lastPathComponent
-                repo.path = resolvedURL.standardizedFileURL.path
-                repo.bookmarkData = isStale ? try makeBookmarkData(for: resolvedURL) : bookmarkData
-
-                if fileManager.fileExists(atPath: repo.path),
-                   resolvedURL.startAccessingSecurityScopedResource() {
-                    activeURLs[repo.id] = resolvedURL
-                }
-            } catch {
-                repo.isActive = false
-            }
-
-            restoredRepos.append(repo)
-        }
-
-        return (
-            repos: restoredRepos.sorted {
-                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
-            },
-            activeURLs: activeURLs
-        )
-    }
-
-    private static func makeBookmarkData(for url: URL) throws -> Data {
-        do {
-            return try url.bookmarkData(
-                options: [.withSecurityScope],
-                includingResourceValuesForKeys: nil,
-                relativeTo: nil
-            )
-        } catch {
-            return try url.bookmarkData(
-                options: [],
-                includingResourceValuesForKeys: nil,
-                relativeTo: nil
-            )
-        }
-    }
-
-    private static func resolveBookmark(_ bookmarkData: Data) throws -> (url: URL, isStale: Bool) {
-        var isStale = false
-
-        do {
-            let resolvedURL = try URL(
-                resolvingBookmarkData: bookmarkData,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale
-            )
-            return (resolvedURL.standardizedFileURL, isStale)
-        } catch {
-            let resolvedURL = try URL(
-                resolvingBookmarkData: bookmarkData,
-                options: [],
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale
-            )
-            return (resolvedURL.standardizedFileURL, isStale)
-        }
-    }
 }
 
 extension DateFormatter {

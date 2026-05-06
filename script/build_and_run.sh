@@ -5,7 +5,7 @@ MODE="run"
 
 if [[ $# -gt 0 ]]; then
   case "$1" in
-    run|--debug|debug|--logs|logs|--telemetry|telemetry|--verify|verify)
+    run|--debug|debug|--logs|logs|--telemetry|telemetry|--verify|verify|digest-once|--run-digests-once|install-agent|uninstall-agent|kickstart-agent)
       MODE="$1"
       shift
       ;;
@@ -64,6 +64,14 @@ open_app() {
   fi
 }
 
+run_binary() {
+  if [[ ${#APP_ARGS[@]} -gt 0 ]]; then
+    "$APP_BINARY" "$1" "${APP_ARGS[@]}"
+  else
+    "$APP_BINARY" "$1"
+  fi
+}
+
 case "$MODE" in
   run)
     open_app
@@ -83,6 +91,18 @@ case "$MODE" in
     open_app
     sleep 2
     pgrep -x "$APP_NAME" >/dev/null
+    ;;
+  digest-once|--run-digests-once)
+    run_binary --run-digests-once
+    ;;
+  install-agent)
+    run_binary --install-digest-agent
+    ;;
+  uninstall-agent)
+    run_binary --uninstall-digest-agent
+    ;;
+  kickstart-agent)
+    run_binary --kickstart-digest-agent
     ;;
   *)
     echo "usage: $0 [run|--debug|--logs|--telemetry|--verify] [-- app arguments]" >&2

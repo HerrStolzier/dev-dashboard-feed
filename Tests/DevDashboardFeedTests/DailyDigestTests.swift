@@ -22,6 +22,15 @@ import Testing
     #expect(restored == [repo])
 }
 
+@MainActor
+@Test func digestRuntimeUsesSharedDefaultPaths() async throws {
+    let fileManager = FileManager.default
+
+    #expect(AppModel.defaultDigestOutputRoot(fileManager: fileManager) == DigestRuntime.defaultDigestOutputRoot(fileManager: fileManager))
+    #expect(ProjectRepoStore.defaultStoreURL(fileManager: fileManager).lastPathComponent == "project-repos.json")
+    #expect(DigestRuntime.defaultLogDirectory(fileManager: fileManager).path.contains("DevDashboardFeed/Logs"))
+}
+
 @Test func gitActivityScannerReadsCommitsSinceDate() async throws {
     let repoURL = try makeTemporaryGitRepo()
     try runGit(["config", "user.name", "Devboard Test"], in: repoURL)
@@ -132,6 +141,105 @@ import Testing
     #expect(appModel.documents.first(where: { $0.sourceKind == .dailyDigest })?.accentColor == "#38bdf8")
 }
 
+@Test func dailyDigestCommandSavesUpdatedReposAndKeepsRepoFailuresLocal() async throws {
+    let fileManager = FileManager.default
+    let tempRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let outputRoot = tempRoot.appendingPathComponent("digests", isDirectory: true)
+    let storeURL = tempRoot.appendingPathComponent("repos.json")
+    try fileManager.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+
+    let goodRepo = ProjectRepo(
+        id: UUID(),
+        name: "good",
+        path: "/tmp/good",
+        accentColor: "#38bdf8",
+        isActive: true,
+        lastSuccessfulCrawlAt: nil
+    )
+    let failingRepo = ProjectRepo(
+        id: UUID(),
+        name: "failing",
+        path: "/tmp/failing",
+        accentColor: "#f472b6",
+        isActive: true,
+        lastSuccessfulCrawlAt: nil
+    )
+    let store = ProjectRepoStore(storeURL: storeURL)
+    try store.save([goodRepo, failingRepo])
+    let command = DailyDigestCommand(
+        runtime: DigestRuntime(
+            projectRepoStore: store,
+            scanner: ConditionalGitActivityScanner(
+                activity: GitRepoActivity(
+                    repo: goodRepo,
+                    commits: [
+                        GitCommitActivity(
+                            hash: "abcdef1234",
+                            shortHash: "abcdef1",
+                            subject: "Build command path",
+                            authorName: "Devboard Test",
+                            authoredAt: Date(timeIntervalSince1970: 1_778_096_700),
+                            changedFiles: ["Sources/Command.swift"]
+                        )
+                    ]
+                ),
+                failingRepoID: failingRepo.id
+            ),
+            digestOutputRoot: outputRoot
+        )
+    )
+
+    let result = command.run(now: Date(timeIntervalSince1970: 1_778_096_800))
+    let restoredRepos = try store.load()
+
+    #expect(result.results.contains(.created(repoName: "good", commitCount: 1)))
+    #expect(result.results.contains(.failed(repoName: "failing", message: "scanner failed")))
+    #expect(result.exitCode == 1)
+    #expect(restoredRepos.first(where: { $0.id == goodRepo.id })?.lastSuccessfulCrawlAt == Date(timeIntervalSince1970: 1_778_096_800))
+    #expect(restoredRepos.first(where: { $0.id == failingRepo.id })?.lastSuccessfulCrawlAt == nil)
+}
+
+@Test func digestLaunchAgentPlistUsesEightPmCalendarInterval() async throws {
+    let plist = DigestLaunchAgentPlist(
+        executableURL: URL(fileURLWithPath: "/Applications/DevDashboardFeed.app/Contents/MacOS/DevDashboardFeed"),
+        standardOutURL: URL(fileURLWithPath: "/tmp/devboard.out.log"),
+        standardErrorURL: URL(fileURLWithPath: "/tmp/devboard.err.log")
+    )
+    let object = try PropertyListSerialization.propertyList(
+        from: try plist.data(),
+        options: [],
+        format: nil
+    )
+    let dictionary = try #require(object as? [String: Any])
+    let arguments = try #require(dictionary["ProgramArguments"] as? [String])
+    let interval = try #require(dictionary["StartCalendarInterval"] as? [String: Int])
+    let environment = try #require(dictionary["EnvironmentVariables"] as? [String: String])
+
+    #expect(dictionary["Label"] as? String == DigestLaunchAgentInstaller.defaultLabel)
+    #expect(arguments == [
+        "/Applications/DevDashboardFeed.app/Contents/MacOS/DevDashboardFeed",
+        "--run-digests-once",
+        "--quiet",
+    ])
+    #expect(interval["Hour"] == 20)
+    #expect(interval["Minute"] == 0)
+    #expect(dictionary["StandardOutPath"] as? String == "/tmp/devboard.out.log")
+    #expect(dictionary["StandardErrorPath"] as? String == "/tmp/devboard.err.log")
+    #expect(environment == ["PATH": "/usr/bin:/bin:/usr/sbin:/sbin"])
+}
+
+@Test func digestLaunchAgentInstallerComputesOwnPlistPath() async throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let installer = DigestLaunchAgentInstaller(
+        label: "com.example.devboard.test",
+        launchAgentsDirectory: root.appendingPathComponent("LaunchAgents", isDirectory: true),
+        logDirectory: root.appendingPathComponent("Logs", isDirectory: true)
+    )
+
+    #expect(installer.plistURL.path.hasSuffix("/LaunchAgents/com.example.devboard.test.plist"))
+    #expect(installer.isInstalled == false)
+}
+
 private func makeTemporaryGitRepo() throws -> URL {
     let repoURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     try FileManager.default.createDirectory(at: repoURL, withIntermediateDirectories: true)
@@ -171,6 +279,19 @@ private struct FakeGitActivityScanner: GitActivityScanning {
 
     func activity(for repo: ProjectRepo, since: Date?) throws -> GitRepoActivity {
         activity
+    }
+}
+
+private struct ConditionalGitActivityScanner: GitActivityScanning {
+    let activity: GitRepoActivity
+    let failingRepoID: UUID
+
+    func activity(for repo: ProjectRepo, since: Date?) throws -> GitRepoActivity {
+        if repo.id == failingRepoID {
+            throw NSError(domain: "FakeScanner", code: 1, userInfo: [NSLocalizedDescriptionKey: "scanner failed"])
+        }
+
+        return GitRepoActivity(repo: repo, commits: activity.commits)
     }
 }
 

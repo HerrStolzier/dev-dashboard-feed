@@ -3,7 +3,11 @@ import Foundation
 struct LaunchOverrides {
     private let watchedFolderPath: String?
     private let selectedDocumentPath: String?
+    private let digestNowValue: String?
     private let fileManager: FileManager
+    let shouldRunDigestsOnce: Bool
+    let quiet: Bool
+    let parseError: String?
 
     init(
         arguments: [String] = CommandLine.arguments,
@@ -11,7 +15,19 @@ struct LaunchOverrides {
     ) {
         self.watchedFolderPath = LaunchOverrides.value(for: "--watched-folder", in: arguments)
         self.selectedDocumentPath = LaunchOverrides.value(for: "--selected-document", in: arguments)
+        self.digestNowValue = LaunchOverrides.value(for: "--digest-now", in: arguments)
+        self.shouldRunDigestsOnce = arguments.contains("--run-digests-once")
+        self.quiet = arguments.contains("--quiet")
         self.fileManager = fileManager
+
+        if arguments.contains("--digest-now"), digestNowValue == nil {
+            self.parseError = "--digest-now needs an ISO-8601 date value."
+        } else if let digestNowValue,
+                  ISO8601DateFormatter.devboardDate(from: digestNowValue) == nil {
+            self.parseError = "--digest-now could not parse date: \(digestNowValue)"
+        } else {
+            self.parseError = nil
+        }
     }
 
     var watchedFoldersOverride: [WatchedFolder]? {
@@ -32,6 +48,14 @@ struct LaunchOverrides {
 
     var preferredDocumentSelectionID: DocumentItem.ID? {
         selectedDocumentURL?.path
+    }
+
+    var digestNow: Date? {
+        guard let digestNowValue else {
+            return nil
+        }
+
+        return ISO8601DateFormatter.devboardDate(from: digestNowValue)
     }
 
     private var watchedFolderURL: URL? {

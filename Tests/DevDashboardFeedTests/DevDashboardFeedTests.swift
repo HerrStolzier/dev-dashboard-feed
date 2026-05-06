@@ -152,6 +152,36 @@ import WebKit
     #expect(overrides.preferredDocumentSelectionID == htmlURL.path)
 }
 
+@Test func launchOverridesReadDigestCliArguments() async throws {
+    let overrides = LaunchOverrides(
+        arguments: [
+            "DevDashboardFeed",
+            "--run-digests-once",
+            "--quiet",
+            "--digest-now", "2026-05-06T20:00:00Z",
+        ]
+    )
+
+    #expect(overrides.shouldRunDigestsOnce == true)
+    #expect(overrides.quiet == true)
+    #expect(overrides.digestNow == ISO8601DateFormatter.devboardDate(from: "2026-05-06T20:00:00Z"))
+    #expect(overrides.parseError == nil)
+}
+
+@Test func launchOverridesReportInvalidDigestDate() async throws {
+    let overrides = LaunchOverrides(
+        arguments: [
+            "DevDashboardFeed",
+            "--run-digests-once",
+            "--digest-now", "not-a-date",
+        ]
+    )
+
+    #expect(overrides.shouldRunDigestsOnce == true)
+    #expect(overrides.digestNow == nil)
+    #expect(overrides.parseError == "--digest-now could not parse date: not-a-date")
+}
+
 @MainActor
 @Test func appModelLoadsScannerDocumentsWhenFoldersExist() async throws {
     let folder = WatchedFolder(
