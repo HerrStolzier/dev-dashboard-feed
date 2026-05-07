@@ -49,6 +49,11 @@ The app should not become a CMS or mutate the source HTML files. HTML documents
 stay as source artifacts; the app adds index, metadata, preview, and reading
 flow around them.
 
+## Requirements
+
+- macOS 15 or newer
+- Xcode 16 or newer, including the Swift 6 toolchain
+
 ## Build And Test
 
 ```bash
