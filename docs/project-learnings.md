@@ -40,6 +40,7 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Wenn ein LaunchAgent ausserhalb des laufenden AppModels schreibt, muss die App danach Repo-Store, Run-Metadaten und Digest-Ordner neu laden. Sonst ist der Agent technisch erfolgreich, aber die UI wirkt alt.
 - Beim erneuten Wiederherstellen von Project-Repo-Bookmarks alte Security-Scoped-Zugriffe sauber stoppen, bevor neue aktive URLs uebernommen werden.
 - Wenn Browser-Tools lokale `file://`-URLs blockieren, ist ein kurzer lokaler HTTP-Server ein brauchbarer visueller QA-Pfad fuer selbststaendige Digest-HTMLs.
+- README, AGENTS und current-status koennen bei schnellen Produktwechseln auseinanderlaufen. Bei Richtungswechseln immer mindestens README und current-status zusammen pruefen.
 
 ## Workflow Gotchas
 

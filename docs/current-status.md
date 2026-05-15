@@ -21,6 +21,10 @@
   - `Run Agent Now` wartet kurz auf frische Agent-Ausgabe und aktualisiert danach Feed und Status
   - Background-Service ist ueber ein kleines Protokoll testbar
   - Regressionstest deckt den Fall ab, dass ein externer Agent Store-Dateien und Digest-HTML schreibt
+- Dokumentation geprueft und README aktualisiert:
+  - README beschreibt jetzt die aktuelle bunte Devboard-/Daily-Digest-Richtung statt des alten ruhigen Reader-Ziels
+  - Dokumentationskarte ergaenzt: README, AGENTS, current-status, project-learnings und aktive Plan-Datei
+  - Plan Summary als eigenes README-Kapitel ergaenzt
 - Weiterentwicklungsplan fuer den echten 20:00-Daily-Digest-Background-Agent erstellt: `daily-digest-background-agent-plan.md`.
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
@@ -107,6 +111,7 @@
 - `Tests/DevDashboardFeedTests/DailyDigestTests.swift`
 - `Tests/DevDashboardFeedTests/DevDashboardFeedTests.swift`
 - `script/verify_daily_digest_agent.sh`
+- `README.md`
 
 ## Letzte Verifikation
 
@@ -135,6 +140,11 @@
   - `script/verify_daily_digest_agent.sh` erfolgreich; temporaeres Git-Repo erzeugte ein Digest-HTML.
   - `script/build_and_run.sh --verify` erfolgreich.
   - Browser-use/Playwright-Pruefung ueber lokalen HTTP-Server erfolgreich: generiertes Digest-HTML zeigte Titel, Badge-Zeile, Explainer, Aktivitaetskarte, Dateitabelle und Rec-Card. Einziger Console-Fehler war ein erwartbarer fehlender `/favicon.ico`.
+- Dokumentationsrunde am 2026-05-15:
+  - Markdown-Dokumente geprueft: `README.md`, `AGENTS.md`, `daily-digest-background-agent-plan.md`, `docs/current-status.md`, `docs/project-learnings.md`.
+  - Aktiver Plan bestaetigt: `daily-digest-background-agent-plan.md`.
+  - Aelterer breiter Produktplan bestaetigt: `/Users/clawdkent/Desktop/projekte-codex/dev-dashboard-feed-plan.md`.
+  - README wurde mit Dokumentationskarte und Plan Summary aktualisiert.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -154,6 +164,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - danach entscheiden, ob der LaunchAgent-MVP reicht oder ob ein eingebetteter Helper mit `SMAppService` wirklich benoetigt wird
 - `SMAppService` nur einbauen, wenn die Bundle-Struktur dafuer wirklich passt
 - danach den File-Watcher fuer beobachtete HTML-Ordner angehen
+- README bei groesseren Richtungswechseln mitziehen, damit oeffentliche Uebersicht und interne Handoff-Doku nicht auseinanderlaufen
 
 ## Offene Luecken und Risiken
 
@@ -167,6 +178,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - Sehr grosse HTML-Dateien wurden noch nicht auf UI-Ruckler geprueft.
 - Erklaerbaer-Erkennung ist bewusst einfach und sollte spaeter vorsichtig erweitert werden.
 - Einzelne fehlende Subresources innerhalb einer sonst erfolgreichen HTML-Seite werden noch nicht explizit als eigener UI-Hinweis gesammelt.
+- Der aeltere breite Produktplan neben dem Repo beschreibt noch das urspruengliche ruhigere HTML-Reader-Ziel; README und AGENTS sind jetzt aktueller fuer die bunte Devboard-Richtung.
 
 ## Arbeitsregel fuer den naechsten Agent
 
