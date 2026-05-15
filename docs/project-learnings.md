@@ -41,6 +41,7 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Beim erneuten Wiederherstellen von Project-Repo-Bookmarks alte Security-Scoped-Zugriffe sauber stoppen, bevor neue aktive URLs uebernommen werden.
 - Wenn Browser-Tools lokale `file://`-URLs blockieren, ist ein kurzer lokaler HTTP-Server ein brauchbarer visueller QA-Pfad fuer selbststaendige Digest-HTMLs.
 - README, AGENTS und current-status koennen bei schnellen Produktwechseln auseinanderlaufen. Bei Richtungswechseln immer mindestens README und current-status zusammen pruefen.
+- Pixelpunk soll als Interface-Sprache funktionieren, nicht als reine Deko. Gute Anwendung: Quest-/Artifact-Karten, LVL/XP-Badges, dunkle Panels, neonartige Akzente. Schlechte Anwendung: alles schwer lesbar verpixeln.
 
 ## Workflow Gotchas
 

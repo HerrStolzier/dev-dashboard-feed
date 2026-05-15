@@ -56,6 +56,8 @@ The app should:
 - show previews and a readable detail view
 - highlight explanation blocks like "Erklaerbaer"
 - feel native on macOS
+- use a Pixelpunk/Game-HUD visual direction: dark, colorful, playful, slightly
+  pixel-like, and project-centered
 
 The app should not become a CMS or mutate the source HTML files. HTML documents
 and Git repos stay as source artifacts; the app adds index, metadata, preview,
@@ -99,6 +101,21 @@ metadata, Settings status, E2E script, and browser QA path are implemented.
 The next practical checkpoint is to use the Agent MVP with a real personal repo
 inside the running app, then decide whether `SMAppService` is still needed or
 whether the next product step should be the HTML folder file watcher.
+
+## Visual Direction
+
+The current design target is **Pixelpunk Devboard**. It keeps the dark
+TurboQuant base, but adds a playful game-interface layer:
+
+- project cards feel like quest cards or cartridges
+- Daily Digests read like quest logs
+- badges use `LVL`, `XP`, status, and artifact language
+- panels use sharp, pixel-like corners instead of soft document cards
+- neon cyan, magenta, green, and amber carry project energy
+- pixel/game flavor supports the information instead of replacing readability
+
+The UI should not become a full retro emulator skin. The intended balance is a
+modern native macOS app with game-HUD energy.
 
 ## Requirements
 

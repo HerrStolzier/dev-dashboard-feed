@@ -6,37 +6,69 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(appModel.documents, selection: $selection) { document in
-                FeedCardView(document: document)
-                    .tag(document.id)
+            ZStack {
+                PixelpunkTheme.background
+
+                List(appModel.documents, selection: $selection) { document in
+                    FeedCardView(document: document)
+                        .tag(document.id)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                }
+                .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Project Feed")
+            .navigationTitle("Quest Feed")
+            .toolbarBackground(PixelpunkTheme.background, for: .windowToolbar)
         } detail: {
-            if let selectedDocument = appModel.documents.first(where: { $0.id == selection }) {
-                DocumentDetailView(document: selectedDocument)
-            } else {
-                ContentUnavailableView(
-                    "Select a document",
-                    systemImage: "doc.text.magnifyingglass",
-                    description: Text(detailDescription)
-                )
+            ZStack {
+                PixelpunkTheme.appBackground
+                    .ignoresSafeArea()
+
+                if let selectedDocument = appModel.documents.first(where: { $0.id == selection }) {
+                    DocumentDetailView(document: selectedDocument)
+                } else {
+                    VStack(spacing: 16) {
+                        PixelpunkBadge(text: "No quest selected", accent: PixelpunkTheme.amber)
+
+                        Text("Pick a Project Card")
+                            .font(.system(size: 34, weight: .black, design: .rounded))
+                            .foregroundStyle(PixelpunkTheme.ink)
+
+                        Text(detailDescription)
+                            .font(.system(.body, design: .rounded))
+                            .foregroundStyle(PixelpunkTheme.muted)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: 520)
+                    }
+                    .padding(28)
+                    .pixelpunkPanel(accent: PixelpunkTheme.amber, isRaised: true)
+                    .padding(40)
+                }
             }
         }
         .frame(minWidth: 980, minHeight: 620)
         .toolbar {
             ToolbarItem {
-                Button(appModel.isDigestRunInProgress ? "Running..." : "Run Digests") {
+                Button {
                     appModel.runDailyDigests()
+                } label: {
+                    Label(appModel.isDigestRunInProgress ? "Running" : "Run Digests", systemImage: "bolt.fill")
                 }
                 .disabled(appModel.projectRepos.filter(\.isActive).isEmpty || appModel.isDigestRunInProgress)
+                .buttonStyle(PixelpunkButtonStyle(accent: PixelpunkTheme.green))
             }
 
             ToolbarItem {
-                Button("Choose Folder…") {
+                Button {
                     appModel.chooseWatchedFolder()
+                } label: {
+                    Label("Choose Folder", systemImage: "folder.badge.plus")
                 }
+                .buttonStyle(PixelpunkButtonStyle(accent: PixelpunkTheme.cyan))
             }
         }
+        .preferredColorScheme(.dark)
         .onAppear {
             ensureValidSelection()
         }

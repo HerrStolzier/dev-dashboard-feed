@@ -4,79 +4,83 @@ struct FeedCardView: View {
     let document: DocumentItem
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
-                if document.sourceKind == .dailyDigest {
-                    Circle()
-                        .fill(accentColor)
-                        .frame(width: 10, height: 10)
-                        .shadow(color: accentColor.opacity(0.7), radius: 4)
-                        .padding(.top, 5)
-                }
+                pixelIcon
 
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline, spacing: 7) {
                         Text(document.title)
-                            .font(.headline)
+                            .font(.system(.headline, design: .rounded).weight(.black))
+                            .foregroundStyle(PixelpunkTheme.ink)
                             .lineLimit(2)
 
-                        if document.sourceKind == .dailyDigest {
-                            Text("Daily Digest")
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .foregroundStyle(accentColor)
-                                .background(accentColor.opacity(0.14), in: Capsule())
-                        }
+                        Spacer(minLength: 0)
                     }
 
                     Text(document.summary)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.system(.caption, design: .rounded))
+                        .foregroundStyle(PixelpunkTheme.muted)
                         .lineLimit(3)
                 }
             }
 
-            HStack {
-                Label(document.project, systemImage: document.sourceKind == .dailyDigest ? "sparkles.rectangle.stack" : "folder")
+            HStack(spacing: 6) {
+                PixelpunkBadge(text: sourceLabel, accent: accentColor)
+                PixelpunkBadge(text: "LVL \(level)", accent: PixelpunkTheme.amber)
+
                 Spacer()
+
                 Text(document.relativeTimestamp)
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .foregroundStyle(PixelpunkTheme.muted)
             }
-            .font(.caption)
-            .foregroundStyle(.tertiary)
+
+            HStack(spacing: 7) {
+                Image(systemName: document.sourceKind == .dailyDigest ? "sparkles.rectangle.stack.fill" : "folder.fill")
+                Text(document.project)
+                    .lineLimit(1)
+                Spacer()
+                Text("\(xp) XP")
+            }
+            .font(.system(size: 11, weight: .bold, design: .monospaced))
+            .foregroundStyle(accentColor.opacity(0.95))
         }
-        .padding(12)
-        .background(cardBackground, in: RoundedRectangle(cornerRadius: 8))
-        .overlay {
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(borderColor, lineWidth: document.sourceKind == .dailyDigest ? 1 : 0)
-        }
+        .padding(13)
+        .pixelpunkPanel(accent: accentColor, isRaised: document.sourceKind == .dailyDigest)
         .padding(.vertical, 4)
+    }
+
+    private var pixelIcon: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(accentColor.opacity(0.18))
+                .frame(width: 34, height: 34)
+
+            Image(systemName: document.sourceKind == .dailyDigest ? "bolt.fill" : "doc.text.fill")
+                .font(.system(size: 15, weight: .black))
+                .foregroundStyle(accentColor)
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: 4)
+                .stroke(accentColor.opacity(0.65), lineWidth: 1)
+        }
+        .shadow(color: accentColor.opacity(0.35), radius: 8)
     }
 
     private var accentColor: Color {
         Color(devboardHex: document.accentColor ?? "#38bdf8")
     }
 
-    private var cardBackground: some ShapeStyle {
-        if document.sourceKind == .dailyDigest {
-            AnyShapeStyle(
-                LinearGradient(
-                    colors: [
-                        accentColor.opacity(0.16),
-                        Color.black.opacity(0.18),
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        } else {
-            AnyShapeStyle(Color.clear)
-        }
+    private var sourceLabel: String {
+        document.sourceKind == .dailyDigest ? "Quest Log" : "Artifact"
     }
 
-    private var borderColor: Color {
-        document.sourceKind == .dailyDigest ? accentColor.opacity(0.35) : .clear
+    private var level: Int {
+        max(1, min(99, document.title.count / 4 + (document.sourceKind == .dailyDigest ? 8 : 1)))
+    }
+
+    private var xp: Int {
+        max(25, min(999, document.summary.count * (document.sourceKind == .dailyDigest ? 3 : 1)))
     }
 }

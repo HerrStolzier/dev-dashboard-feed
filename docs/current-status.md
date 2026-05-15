@@ -25,6 +25,11 @@
   - README beschreibt jetzt die aktuelle bunte Devboard-/Daily-Digest-Richtung statt des alten ruhigen Reader-Ziels
   - Dokumentationskarte ergaenzt: README, AGENTS, current-status, project-learnings und aktive Plan-Datei
   - Plan Summary als eigenes README-Kapitel ergaenzt
+- Pixelpunk-Designrichtung aufgenommen und erste UI-Iteration umgesetzt:
+  - neues kleines `PixelpunkTheme` fuer Farben, Panels, Badges und Arcade-Buttons
+  - Feed-Karten wirken jetzt wie Quest-/Artifact-Cards mit LVL/XP/Status
+  - Detailansicht nutzt Mission-Brief, Quest-Header, Power-Up-Block und dunkle Pixelpunk-Panels
+  - Hauptfenster nutzt Dark/Neon-Grundstimmung statt hellem Sample-Reader-Look
 - Weiterentwicklungsplan fuer den echten 20:00-Daily-Digest-Background-Agent erstellt: `daily-digest-background-agent-plan.md`.
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
@@ -108,6 +113,7 @@
 - `Sources/DevDashboardFeed/Features/Settings/SettingsView.swift`
 - `Sources/DevDashboardFeed/Features/Feed/FeedCardView.swift`
 - `Sources/DevDashboardFeed/Features/Detail/DocumentDetailView.swift`
+- `Sources/DevDashboardFeed/Features/Shared/PixelpunkTheme.swift`
 - `Tests/DevDashboardFeedTests/DailyDigestTests.swift`
 - `Tests/DevDashboardFeedTests/DevDashboardFeedTests.swift`
 - `script/verify_daily_digest_agent.sh`
@@ -145,6 +151,8 @@
   - Aktiver Plan bestaetigt: `daily-digest-background-agent-plan.md`.
   - Aelterer breiter Produktplan bestaetigt: `/Users/clawdkent/Desktop/projekte-codex/dev-dashboard-feed-plan.md`.
   - README wurde mit Dokumentationskarte und Plan Summary aktualisiert.
+- Pixelpunk-UI-Runde am 2026-05-15:
+  - `swift build` erfolgreich nach der ersten Designsystem-/UI-Iteration.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -165,6 +173,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - `SMAppService` nur einbauen, wenn die Bundle-Struktur dafuer wirklich passt
 - danach den File-Watcher fuer beobachtete HTML-Ordner angehen
 - README bei groesseren Richtungswechseln mitziehen, damit oeffentliche Uebersicht und interne Handoff-Doku nicht auseinanderlaufen
+- Pixelpunk-Iteration visuell in der echten App pruefen und danach Settings/Repo-Verwaltung passend nachziehen
 
 ## Offene Luecken und Risiken
 
@@ -179,6 +188,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - Erklaerbaer-Erkennung ist bewusst einfach und sollte spaeter vorsichtig erweitert werden.
 - Einzelne fehlende Subresources innerhalb einer sonst erfolgreichen HTML-Seite werden noch nicht explizit als eigener UI-Hinweis gesammelt.
 - Der aeltere breite Produktplan neben dem Repo beschreibt noch das urspruengliche ruhigere HTML-Reader-Ziel; README und AGENTS sind jetzt aktueller fuer die bunte Devboard-Richtung.
+- Settings ist noch weitgehend native `Form` und optisch nicht auf Pixelpunk umgestellt.
 
 ## Arbeitsregel fuer den naechsten Agent
 
