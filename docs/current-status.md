@@ -1,6 +1,6 @@
 # Current Status
 
-## Stand vom 2026-05-06
+## Stand vom 2026-05-15
 
 ## Zuletzt abgeschlossen
 
@@ -16,6 +16,11 @@
   - verpasste 20:00-Laeufe werden konkreter mit Datum/Uhrzeit angezeigt
   - CLI-Testpfade fuer Repo-Store, Digest-Output und Metadata-Store
   - End-to-End-Script `script/verify_daily_digest_agent.sh` gegen ein temporaeres Git-Repo
+- App-Flow fuer Agent-Kickstart nachgezogen:
+  - AppModel kann Repo-Store, Run-Metadaten und Digest-HTMLs nach einem externen Agent-Lauf neu laden
+  - `Run Agent Now` wartet kurz auf frische Agent-Ausgabe und aktualisiert danach Feed und Status
+  - Background-Service ist ueber ein kleines Protokoll testbar
+  - Regressionstest deckt den Fall ab, dass ein externer Agent Store-Dateien und Digest-HTML schreibt
 - Weiterentwicklungsplan fuer den echten 20:00-Daily-Digest-Background-Agent erstellt: `daily-digest-background-agent-plan.md`.
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
@@ -68,6 +73,7 @@
 - `DailyDigestRenderer` erzeugt selbststaendige HTML-Dateien mit eingebettetem CSS im TurboQuant-Stil.
 - `AppModel.runDailyDigests(now:)` erzeugt pro aktivem Repo und Tag eine HTML-Datei, wenn neue Commits gefunden wurden.
 - Settings zeigt jetzt eine `Daily Digest Automation`-Sektion fuer Installieren, Entfernen und einmaliges Starten des lokalen 20:00-LaunchAgents.
+- Nach `Run Agent Now` pollt die App kurz die lokalen Stores und aktualisiert Feed, Repo-Status und Run-Metadaten, sobald der externe Agent fertig geschrieben hat.
 - Repo-Ordnernamen fuer Digest-Dateien werden sanitisiert und mit einem kurzen Repo-ID-Suffix kollisionsaermer gemacht.
 - Wenn keine Quellen vorhanden sind, faellt die App weiter auf Sample-Daten zurueck.
 
@@ -123,6 +129,12 @@
   - `script/build_and_run.sh --verify` erfolgreich.
   - `git diff --check` erfolgreich.
   - Nach der Verifikation ist weiterhin kein Test-LaunchAgent installiert.
+- Umsetzung am 2026-05-15:
+  - `swift test` erfolgreich, 28 Tests gruen.
+  - `swift build` erfolgreich.
+  - `script/verify_daily_digest_agent.sh` erfolgreich; temporaeres Git-Repo erzeugte ein Digest-HTML.
+  - `script/build_and_run.sh --verify` erfolgreich.
+  - Browser-use/Playwright-Pruefung ueber lokalen HTTP-Server erfolgreich: generiertes Digest-HTML zeigte Titel, Badge-Zeile, Explainer, Aktivitaetskarte, Dateitabelle und Rec-Card. Einziger Console-Fehler war ein erwartbarer fehlender `/favicon.ico`.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -135,20 +147,20 @@
 
 ## Naechster kleinster sinnvoller Schritt
 
-Den Agent-MVP in der echten App pruefen: Project Repo in Settings auswaehlen, Agent installieren, einmal kickstarten, generierten Digest im Feed und im Browser visuell pruefen.
+Den Agent-MVP mit einem echten eigenen Repo in der laufenden App benutzen: Project Repo in Settings auswaehlen, Agent installieren, einmal kickstarten und pruefen, ob der Feed direkt danach den neuen Digest zeigt.
 
 Das sollte bewusst in einem kleinen Schritt passieren:
 
 - danach entscheiden, ob der LaunchAgent-MVP reicht oder ob ein eingebetteter Helper mit `SMAppService` wirklich benoetigt wird
 - `SMAppService` nur einbauen, wenn die Bundle-Struktur dafuer wirklich passt
-- Browser-use/visuelle QA fuer ein Agent- oder Script-erzeugtes Digest-HTML nachholen, sobald der Browser-Use Node-RePL verfuegbar ist
+- danach den File-Watcher fuer beobachtete HTML-Ordner angehen
 
 ## Offene Luecken und Risiken
 
 - Der lokale LaunchAgent-MVP ist implementiert und testbar, aber noch kein eingebetteter `SMAppService`-Helper.
 - Persistente Run-Metadaten existieren, aber es gibt noch keine detaillierte Run-Historie pro Repo.
 - `launchctl print` zeigt im Diagnosekontext auch geerbte Domain-Umgebung; die eigentliche Agent-Plist setzt einen minimalen `PATH`, aber sensible Terminal-Umgebung sollte beim Installieren trotzdem vermieden werden.
-- Browser-use Visual-QA fuer die neue Agent-E2E-Datei wurde in dieser Runde nicht ausgefuehrt, weil der benoetigte Node-RePL nach Tool-Discovery nicht verfuegbar war.
+- Browser-use/Playwright-QA fuer die neue Agent-E2E-Datei wurde ueber lokalen HTTP-Server ausgefuehrt; direkte `file://`-Navigation war im Browser-Tool blockiert.
 - File-Watcher fuer automatische Aktualisierung beobachteter HTML-Ordner fehlt weiterhin.
 - Sehr grosse Git-Historien koennen beim ersten Tageslauf noch teuer werden, auch wenn der Default-Cutoff jetzt Tagesanfang ist.
 - Mehrere Repos mit gleichem Namen sind durch ID-Suffixe im Digest-Pfad besser getrennt, aber die UI zeigt noch keine explizite Kollisionshilfe.

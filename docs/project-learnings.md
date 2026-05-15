@@ -37,6 +37,9 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - CLI-Pfad-Overrides fuer Repo-Store, Digest-Output und Metadata-Store machen Agent-Integrationstests sicherer, weil echte lokale App-Daten nicht beruehrt werden.
 - Ein temporaeres Git-Repo als End-to-End-Test ist der beste kleine Realitaetscheck fuer den Digest-Agenten: Git, Store, Renderer und Metadata-Update laufen dabei gemeinsam durch.
 - Browser-use Visual-QA ist fuer HTML-Renderer wertvoll, aber nicht gleichwertig mit Content-Pruefungen. Wenn der Browser-Use Node-RePL nicht verfuegbar ist, sollten wenigstens HTML-Inhalt, CSS-Signaturen und erzeugte Artefaktpfade automatisch geprueft werden.
+- Wenn ein LaunchAgent ausserhalb des laufenden AppModels schreibt, muss die App danach Repo-Store, Run-Metadaten und Digest-Ordner neu laden. Sonst ist der Agent technisch erfolgreich, aber die UI wirkt alt.
+- Beim erneuten Wiederherstellen von Project-Repo-Bookmarks alte Security-Scoped-Zugriffe sauber stoppen, bevor neue aktive URLs uebernommen werden.
+- Wenn Browser-Tools lokale `file://`-URLs blockieren, ist ein kurzer lokaler HTTP-Server ein brauchbarer visueller QA-Pfad fuer selbststaendige Digest-HTMLs.
 
 ## Workflow Gotchas
 

@@ -158,6 +158,86 @@ import Testing
     #expect(appModel.documents.first(where: { $0.sourceKind == .dailyDigest })?.accentColor == "#38bdf8")
 }
 
+@MainActor
+@Test func appModelRefreshesDigestStateWrittenByExternalAgent() async throws {
+    let fileManager = FileManager.default
+    let tempRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    let outputRoot = tempRoot.appendingPathComponent("digests", isDirectory: true)
+    let storeURL = tempRoot.appendingPathComponent("repos.json")
+    let metadataURL = tempRoot.appendingPathComponent("metadata.json")
+    try fileManager.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+
+    let repo = ProjectRepo(
+        id: UUID(),
+        name: "agent-flow",
+        path: "/tmp/agent-flow",
+        accentColor: "#34d399",
+        isActive: true,
+        lastSuccessfulCrawlAt: nil
+    )
+    let repoStore = ProjectRepoStore(storeURL: storeURL)
+    let metadataStore = DigestRunMetadataStore(storeURL: metadataURL)
+    try repoStore.save([repo])
+
+    let appModel = AppModel(
+        folderAccessController: DigestFakeFolderAccessController(),
+        documentScanner: DocumentScanner(),
+        projectRepoStore: repoStore,
+        metadataStore: metadataStore,
+        gitActivityScanner: FakeGitActivityScanner(
+            activity: GitRepoActivity(repo: repo, commits: [])
+        ),
+        digestOutputRoot: outputRoot,
+        launchOverrides: LaunchOverrides(arguments: ["DevDashboardFeed"], fileManager: fileManager),
+        backgroundService: FakeDigestBackgroundService()
+    )
+
+    let runDate = Date(timeIntervalSince1970: 1_778_096_800)
+    let updatedRepo = ProjectRepo(
+        id: repo.id,
+        name: repo.name,
+        path: repo.path,
+        accentColor: repo.accentColor,
+        isActive: repo.isActive,
+        lastSuccessfulCrawlAt: runDate,
+        bookmarkData: repo.bookmarkData
+    )
+    let activity = GitRepoActivity(
+        repo: updatedRepo,
+        commits: [
+            GitCommitActivity(
+                hash: "abcdef123456",
+                shortHash: "abcdef1",
+                subject: "External agent digest",
+                authorName: "Devboard Test",
+                authoredAt: runDate,
+                changedFiles: ["Sources/AppModel.swift"]
+            )
+        ]
+    )
+    let digestURL = outputRoot
+        .appendingPathComponent(DigestPath.directoryName(for: updatedRepo), isDirectory: true)
+        .appendingPathComponent("\(DateFormatter.devboardFileDayString(from: runDate)).html")
+    try fileManager.createDirectory(at: digestURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+    try Data(DailyDigestRenderer().render(activity: activity, generatedAt: runDate).utf8).write(to: digestURL)
+    try repoStore.save([updatedRepo])
+    try metadataStore.save(
+        DigestRunMetadata(
+            lastRunAt: runDate,
+            lastSuccessfulRunAt: runDate,
+            lastErrorMessage: nil,
+            nextScheduledRunAt: Date(timeIntervalSince1970: 1_778_183_200)
+        )
+    )
+
+    let changed = appModel.refreshDigestStateFromStores(now: runDate)
+
+    #expect(changed)
+    #expect(appModel.digestRunMetadata.lastRunAt == runDate)
+    #expect(appModel.projectRepos.first?.lastSuccessfulCrawlAt == runDate)
+    #expect(appModel.documents.contains { $0.sourceKind == .dailyDigest && $0.title.contains("agent-flow") })
+}
+
 @Test func dailyDigestCommandSavesUpdatedReposAndKeepsRepoFailuresLocal() async throws {
     let fileManager = FileManager.default
     let tempRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -320,6 +400,19 @@ private struct ConditionalGitActivityScanner: GitActivityScanning {
 
         return GitRepoActivity(repo: repo, commits: activity.commits)
     }
+}
+
+private struct FakeDigestBackgroundService: DigestBackgroundServicing {
+    var status: DigestBackgroundServiceStatus = .notInstalled
+    var plistURL: URL = URL(fileURLWithPath: "/tmp/devboard-agent.plist")
+
+    func install(executableURL: URL) throws -> URL {
+        plistURL
+    }
+
+    func uninstall() throws {}
+
+    func kickstart() throws {}
 }
 
 @MainActor

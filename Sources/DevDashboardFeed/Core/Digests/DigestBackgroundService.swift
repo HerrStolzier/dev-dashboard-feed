@@ -1,11 +1,20 @@
 import Foundation
 
+protocol DigestBackgroundServicing {
+    var status: DigestBackgroundServiceStatus { get }
+    var plistURL: URL { get }
+
+    func install(executableURL: URL) throws -> URL
+    func uninstall() throws
+    func kickstart() throws
+}
+
 enum DigestBackgroundServiceStatus: Hashable, Sendable {
     case installed
     case notInstalled
 }
 
-struct DigestBackgroundService {
+struct DigestBackgroundService: DigestBackgroundServicing {
     private let installer: DigestLaunchAgentInstaller
 
     init(installer: DigestLaunchAgentInstaller = DigestLaunchAgentInstaller()) {

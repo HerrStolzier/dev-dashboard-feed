@@ -37,7 +37,7 @@ final class AppModel {
     @ObservationIgnored
     private let projectRepoAccess: ProjectRepoAccess
     @ObservationIgnored
-    private let backgroundService: DigestBackgroundService
+    private let backgroundService: any DigestBackgroundServicing
     @ObservationIgnored
     private var activeProjectRepoURLs: [UUID: URL]
 
@@ -53,7 +53,7 @@ final class AppModel {
         launchOverrides: LaunchOverrides = LaunchOverrides(),
         digestScheduler: DigestScheduler = DigestScheduler(),
         projectRepoAccess: ProjectRepoAccess = ProjectRepoAccess(),
-        backgroundService: DigestBackgroundService = DigestBackgroundService()
+        backgroundService: any DigestBackgroundServicing = DigestBackgroundService()
     ) {
         self.folderAccessController = folderAccessController
         self.documentScanner = documentScanner
@@ -261,11 +261,40 @@ final class AppModel {
 
     func kickstartBackgroundAgent() {
         do {
+            let previousLastRunAt = digestRunMetadata.lastRunAt
             try backgroundService.kickstart()
-            backgroundAgentStatusMessage = "Daily Digest agent was started once."
+            backgroundAgentStatusMessage = "Daily Digest agent was started once. Waiting for fresh digest state..."
+            refreshDigestStateAfterExternalAgentRun(previousLastRunAt: previousLastRunAt)
         } catch {
             backgroundAgentStatusMessage = error.localizedDescription
         }
+    }
+
+    @discardableResult
+    func refreshDigestStateFromStores(now: Date = .now) -> Bool {
+        let previousMetadata = digestRunMetadata
+        let previousRepoSnapshot = projectRepos
+        let previousDocumentIDs = Set(documents.map(\.id))
+
+        let restoredProjectRepos = projectRepoAccess.restore((try? projectRepoStore.load()) ?? projectRepos)
+        activeProjectRepoURLs.values.forEach { $0.stopAccessingSecurityScopedResource() }
+        projectRepos = restoredProjectRepos.repos
+        activeProjectRepoURLs = restoredProjectRepos.activeURLs
+
+        if var loadedMetadata = try? metadataStore.load() {
+            if loadedMetadata.nextScheduledRunAt == nil {
+                loadedMetadata.nextScheduledRunAt = digestScheduler.nextScheduledRun(after: now)
+            }
+            digestRunMetadata = loadedMetadata
+        }
+
+        updateCatchUpStatus(now: now)
+        reloadDocuments()
+
+        let currentDocumentIDs = Set(documents.map(\.id))
+        return previousMetadata != digestRunMetadata
+            || previousRepoSnapshot != projectRepos
+            || previousDocumentIDs != currentDocumentIDs
     }
 
     @discardableResult
@@ -424,6 +453,29 @@ final class AppModel {
             try metadataStore.save(digestRunMetadata)
         } catch {
             digestStatusMessage = "\(digestStatusMessage ?? "Daily Digest run finished.") Metadata could not be saved: \(error.localizedDescription)"
+        }
+    }
+
+    private func refreshDigestStateAfterExternalAgentRun(previousLastRunAt: Date?) {
+        Task { @MainActor in
+            for attempt in 0..<10 {
+                if attempt > 0 {
+                    try? await Task.sleep(nanoseconds: 500_000_000)
+                }
+
+                let changed = refreshDigestStateFromStores()
+                if digestRunMetadata.lastRunAt != previousLastRunAt {
+                    backgroundAgentStatusMessage = "Daily Digest agent finished. Feed and run status were refreshed."
+                    return
+                }
+
+                if changed {
+                    backgroundAgentStatusMessage = "Daily Digest agent updated local state. Feed was refreshed."
+                    return
+                }
+            }
+
+            backgroundAgentStatusMessage = "Daily Digest agent was started once. No fresh digest output was detected yet."
         }
     }
 
