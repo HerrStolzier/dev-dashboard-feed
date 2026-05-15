@@ -11,6 +11,8 @@ enum PixelpunkTheme {
     static let green = Color(red: 0.26, green: 0.96, blue: 0.62)
     static let amber = Color(red: 1.0, green: 0.78, blue: 0.25)
     static let border = Color.white.opacity(0.14)
+    static let cornerRadius: CGFloat = 5
+    static let detailMaxWidth: CGFloat = 980
 
     static var heroGradient: LinearGradient {
         LinearGradient(
@@ -44,51 +46,73 @@ enum PixelpunkTheme {
 struct PixelpunkPanel: ViewModifier {
     var accent: Color = PixelpunkTheme.cyan
     var isRaised = false
+    var isSelected = false
 
     func body(content: Content) -> some View {
         content
             .background(
                 ZStack(alignment: .topLeading) {
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isRaised ? PixelpunkTheme.panelRaised : PixelpunkTheme.panel)
+                    RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
+                        .fill(panelFill)
 
                     Rectangle()
                         .fill(accent)
                         .frame(height: 3)
+
+                    Rectangle()
+                        .fill(accent.opacity(0.65))
+                        .frame(width: isSelected ? 5 : 0)
                 }
             )
             .overlay {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(accent.opacity(0.7), lineWidth: 1)
+                RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
+                    .stroke(isSelected ? accent.opacity(0.9) : PixelpunkTheme.border, lineWidth: 1)
             }
-            .shadow(color: accent.opacity(isRaised ? 0.25 : 0.12), radius: 14, x: 0, y: 8)
+            .shadow(color: accent.opacity(isRaised || isSelected ? 0.22 : 0.08), radius: isRaised || isSelected ? 14 : 8, x: 0, y: 7)
+    }
+
+    private var panelFill: some ShapeStyle {
+        if isSelected {
+            AnyShapeStyle(
+                LinearGradient(
+                    colors: [accent.opacity(0.22), PixelpunkTheme.panelRaised],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+        } else {
+            AnyShapeStyle(isRaised ? PixelpunkTheme.panelRaised : PixelpunkTheme.panel)
+        }
     }
 }
 
 extension View {
-    func pixelpunkPanel(accent: Color = PixelpunkTheme.cyan, isRaised: Bool = false) -> some View {
-        modifier(PixelpunkPanel(accent: accent, isRaised: isRaised))
+    func pixelpunkPanel(accent: Color = PixelpunkTheme.cyan, isRaised: Bool = false, isSelected: Bool = false) -> some View {
+        modifier(PixelpunkPanel(accent: accent, isRaised: isRaised, isSelected: isSelected))
     }
 }
 
 struct PixelpunkButtonStyle: ButtonStyle {
     var accent: Color = PixelpunkTheme.cyan
+    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
+        let activeAccent = isEnabled ? accent : PixelpunkTheme.muted
         configuration.label
             .font(.system(.callout, design: .monospaced).weight(.black))
             .textCase(.uppercase)
-            .foregroundStyle(PixelpunkTheme.background)
+            .foregroundStyle(isEnabled ? PixelpunkTheme.background : PixelpunkTheme.panel)
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .background(accent.opacity(configuration.isPressed ? 0.75 : 1.0), in: RoundedRectangle(cornerRadius: 5))
+            .background(activeAccent.opacity(configuration.isPressed ? 0.75 : 1.0), in: RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
             .overlay(alignment: .bottom) {
                 Rectangle()
                     .fill(Color.black.opacity(0.22))
                     .frame(height: configuration.isPressed ? 1 : 3)
                     .padding(.horizontal, 3)
             }
-            .shadow(color: accent.opacity(configuration.isPressed ? 0.12 : 0.35), radius: configuration.isPressed ? 4 : 12, y: 6)
+            .shadow(color: activeAccent.opacity(isEnabled ? (configuration.isPressed ? 0.12 : 0.35) : 0), radius: configuration.isPressed ? 4 : 12, y: 6)
+            .opacity(isEnabled ? 1.0 : 0.42)
             .offset(y: configuration.isPressed ? 1 : 0)
     }
 }

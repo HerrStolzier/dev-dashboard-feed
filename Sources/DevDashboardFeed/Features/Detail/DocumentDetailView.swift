@@ -18,7 +18,7 @@ struct DocumentDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(18)
-                .pixelpunkPanel(accent: PixelpunkTheme.cyan)
+                .pixelpunkPanel(accent: accentColor)
 
                 VStack(alignment: .leading, spacing: 10) {
                     sectionTitle("Erklaerbaer Power-Up")
@@ -29,9 +29,9 @@ struct DocumentDetailView: View {
                             .foregroundStyle(PixelpunkTheme.ink)
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(PixelpunkTheme.amber.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                            .background(PixelpunkTheme.amber.opacity(0.12), in: RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
                             .overlay {
-                                RoundedRectangle(cornerRadius: 5)
+                                RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
                                     .stroke(PixelpunkTheme.amber.opacity(0.55), lineWidth: 1)
                             }
                     } else {
@@ -41,7 +41,7 @@ struct DocumentDetailView: View {
                     }
                 }
                 .padding(18)
-                .pixelpunkPanel(accent: PixelpunkTheme.amber)
+                .pixelpunkPanel(accent: accentColor)
 
                 VStack(alignment: .leading, spacing: 10) {
                     sectionTitle("Artifact Preview")
@@ -49,9 +49,11 @@ struct DocumentDetailView: View {
                     previewSection
                 }
                 .padding(18)
-                .pixelpunkPanel(accent: PixelpunkTheme.magenta)
+                .pixelpunkPanel(accent: accentColor)
             }
+            .frame(maxWidth: PixelpunkTheme.detailMaxWidth, alignment: .leading)
             .padding(28)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(PixelpunkTheme.appBackground)
         .navigationTitle(document.title)
@@ -62,10 +64,14 @@ struct DocumentDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 8) {
-                PixelpunkBadge(text: document.sourceKind == .dailyDigest ? "Quest Complete" : "Source Artifact", accent: accentColor)
-                PixelpunkBadge(text: document.relativeTimestamp, accent: PixelpunkTheme.green)
-                PixelpunkBadge(text: "XP \(max(25, document.summary.count))", accent: PixelpunkTheme.amber)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    headerBadges
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    headerBadges
+                }
             }
 
             Text(document.title)
@@ -74,15 +80,28 @@ struct DocumentDetailView: View {
                 .lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 6) {
                 Label(document.project, systemImage: document.sourceKind == .dailyDigest ? "sparkles.rectangle.stack.fill" : "folder.fill")
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+
                 Label(document.path, systemImage: "shippingbox.fill")
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
             .font(.system(.subheadline, design: .monospaced).weight(.bold))
             .foregroundStyle(PixelpunkTheme.muted)
         }
         .padding(22)
         .pixelpunkPanel(accent: accentColor, isRaised: true)
+    }
+
+    private var headerBadges: some View {
+        Group {
+            PixelpunkBadge(text: document.sourceKind == .dailyDigest ? "Quest Complete" : "Source Artifact", accent: accentColor)
+            PixelpunkBadge(text: document.relativeTimestamp, accent: PixelpunkTheme.green)
+            PixelpunkBadge(text: "XP \(max(25, document.summary.count))", accent: PixelpunkTheme.amber)
+        }
     }
 
     private func sectionTitle(_ text: String) -> some View {
@@ -105,10 +124,10 @@ struct DocumentDetailView: View {
 
                     previewOverlay
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .clipShape(RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.primary.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
+                        .stroke(PixelpunkTheme.border, lineWidth: 1)
                 }
 
                 Text("External links open outside the inline preview so this detail view stays focused on the current local file.")
@@ -134,9 +153,9 @@ struct DocumentDetailView: View {
                     .frame(maxWidth: 460)
             }
             .frame(maxWidth: .infinity, minHeight: 220)
-            .background(PixelpunkTheme.panelRaised, in: RoundedRectangle(cornerRadius: 6))
+            .background(PixelpunkTheme.panelRaised, in: RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
             .overlay {
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
                     .stroke(PixelpunkTheme.border, lineWidth: 1)
             }
         }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FeedCardView: View {
     let document: DocumentItem
+    var isSelected = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -34,26 +35,33 @@ struct FeedCardView: View {
                 Text(document.relativeTimestamp)
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(PixelpunkTheme.muted)
+                    .lineLimit(1)
             }
 
             HStack(spacing: 7) {
                 Image(systemName: document.sourceKind == .dailyDigest ? "sparkles.rectangle.stack.fill" : "folder.fill")
                 Text(document.project)
                     .lineLimit(1)
+                    .truncationMode(.middle)
                 Spacer()
                 Text("\(xp) XP")
+                    .lineLimit(1)
             }
             .font(.system(size: 11, weight: .bold, design: .monospaced))
             .foregroundStyle(accentColor.opacity(0.95))
         }
         .padding(13)
-        .pixelpunkPanel(accent: accentColor, isRaised: document.sourceKind == .dailyDigest)
-        .padding(.vertical, 4)
+        .pixelpunkPanel(
+            accent: accentColor,
+            isRaised: document.sourceKind == .dailyDigest,
+            isSelected: isSelected
+        )
+        .contentShape(RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
     }
 
     private var pixelIcon: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
                 .fill(accentColor.opacity(0.18))
                 .frame(width: 34, height: 34)
 
@@ -62,7 +70,7 @@ struct FeedCardView: View {
                 .foregroundStyle(accentColor)
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
                 .stroke(accentColor.opacity(0.65), lineWidth: 1)
         }
         .shadow(color: accentColor.opacity(0.35), radius: 8)

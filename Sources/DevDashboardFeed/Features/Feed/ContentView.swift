@@ -6,18 +6,39 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            ZStack {
-                PixelpunkTheme.background
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("DEVBOARD")
+                        .font(.system(size: 11, weight: .black, design: .monospaced))
+                        .foregroundStyle(PixelpunkTheme.cyan)
 
-                List(appModel.documents, selection: $selection) { document in
-                    FeedCardView(document: document)
-                        .tag(document.id)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                    Text("Quest Feed")
+                        .font(.system(.title3, design: .rounded).weight(.black))
+                        .foregroundStyle(PixelpunkTheme.ink)
                 }
-                .scrollContentBackground(.hidden)
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        ForEach(appModel.documents) { document in
+                            Button {
+                                selection = document.id
+                            } label: {
+                                FeedCardView(
+                                    document: document,
+                                    isSelected: selection == document.id
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 16)
+                }
             }
+            .frame(minWidth: 300)
+            .background(PixelpunkTheme.background)
             .navigationTitle("Quest Feed")
             .toolbarBackground(PixelpunkTheme.background, for: .windowToolbar)
         } detail: {

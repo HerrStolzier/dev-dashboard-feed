@@ -30,6 +30,11 @@
   - Feed-Karten wirken jetzt wie Quest-/Artifact-Cards mit LVL/XP/Status
   - Detailansicht nutzt Mission-Brief, Quest-Header, Power-Up-Block und dunkle Pixelpunk-Panels
   - Hauptfenster nutzt Dark/Neon-Grundstimmung statt hellem Sample-Reader-Look
+- Pixelpunk-Formreview umgesetzt:
+  - native blaue Listenauswahl durch eigene Sidebar-/Card-Auswahl ersetzt
+  - Detailbereiche auf gemeinsame Maximalbreite gebracht
+  - Panel-Formen, Ecken und Borders vereinheitlicht
+  - Detailsektionen nutzen jetzt eine ruhigere gemeinsame Akzentlogik statt konkurrierender Vollfarb-Outlines
 - Weiterentwicklungsplan fuer den echten 20:00-Daily-Digest-Background-Agent erstellt: `daily-digest-background-agent-plan.md`.
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
@@ -153,6 +158,7 @@
   - README wurde mit Dokumentationskarte und Plan Summary aktualisiert.
 - Pixelpunk-UI-Runde am 2026-05-15:
   - `swift build` erfolgreich nach der ersten Designsystem-/UI-Iteration.
+  - Nach Formreview erneut `swift build`, `swift test` und `git diff --check` erfolgreich.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -174,6 +180,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - danach den File-Watcher fuer beobachtete HTML-Ordner angehen
 - README bei groesseren Richtungswechseln mitziehen, damit oeffentliche Uebersicht und interne Handoff-Doku nicht auseinanderlaufen
 - Pixelpunk-Iteration visuell in der echten App pruefen und danach Settings/Repo-Verwaltung passend nachziehen
+- Formen weiter vereinheitlichen: weniger Outline-Arten, klare Card-Hierarchie, keine System-Controls, die gegen den Game-HUD-Look arbeiten
 
 ## Offene Luecken und Risiken
 
@@ -189,6 +196,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - Einzelne fehlende Subresources innerhalb einer sonst erfolgreichen HTML-Seite werden noch nicht explizit als eigener UI-Hinweis gesammelt.
 - Der aeltere breite Produktplan neben dem Repo beschreibt noch das urspruengliche ruhigere HTML-Reader-Ziel; README und AGENTS sind jetzt aktueller fuer die bunte Devboard-Richtung.
 - Settings ist noch weitgehend native `Form` und optisch nicht auf Pixelpunk umgestellt.
+- Toolbar-Buttons und Sidebar-/Detail-Proportionen brauchen nach echter Sichtprobe wahrscheinlich noch Feinschliff.
 
 ## Arbeitsregel fuer den naechsten Agent
 
