@@ -44,6 +44,7 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - Pixelpunk soll als Interface-Sprache funktionieren, nicht als reine Deko. Gute Anwendung: Quest-/Artifact-Karten, LVL/XP-Badges, dunkle Panels, neonartige Akzente. Schlechte Anwendung: alles schwer lesbar verpixeln.
 - Pixelpunk wird unstimmig, wenn native Systemauswahl, viele verschiedene Corner-Radii, vollfarbige Sektion-Outlines und riesige Panelbreiten gleichzeitig auftreten. Erst ein gemeinsames Panel- und Auswahlmodell stabilisieren, dann Details verspielter machen.
 - Das Mockup-Ziel ist staerker als "Pixel-Akzente": Es ist ein eigenes kleines Pixel-OS. App-Rahmen, Sidebar, Topbar, Cards und Detailmodule muessen aus einem System kommen, sonst wirkt es sofort zusammengesteckt.
+- Keine Fake-Fensterknöpfe im Content zeichnen, solange macOS echte Window Controls zeigt. Doppelte Chrome laesst die UI sofort wie ein Mockup in einer App wirken.
 
 ## Workflow Gotchas
 

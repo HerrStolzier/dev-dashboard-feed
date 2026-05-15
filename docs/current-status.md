@@ -38,7 +38,7 @@
 - Pixel-OS-Mockup als Zielrichtung uebernommen und UI-Shell umgebaut:
   - `NavigationSplitView` durch eigene Pixelpunk-App-Shell ersetzt
   - Outer App Frame mit Chrome-Leiste, Sidebar, Detail-Topbar und integrierten Action-Buttons
-  - native App-Titelleiste fuer das Hauptfenster ausgeblendet, damit die eigene Pixel-OS-Chrome-Leiste nicht doppelt wirkt
+  - eigene Chrome-Leiste enthaelt keine Fake-Fensterampel mehr, sondern echten Feed-/Repo-Status und Actions
   - Sidebar-Cards naeher an Cartridge-/Quest-Karten mit Auswahl-Lasche
   - Detailansicht kompakter als HUD-Module fuer Header, Mission Brief, Erklaerbaer Power-Up und Artifact Preview
   - Project-Accent wird als Shell-/Panel-Thema verwendet
@@ -206,7 +206,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - Der aeltere breite Produktplan neben dem Repo beschreibt noch das urspruengliche ruhigere HTML-Reader-Ziel; README und AGENTS sind jetzt aktueller fuer die bunte Devboard-Richtung.
 - Settings ist noch weitgehend native `Form` und optisch nicht auf Pixelpunk umgestellt.
 - Toolbar-Buttons und Sidebar-/Detail-Proportionen brauchen nach echter Sichtprobe wahrscheinlich noch Feinschliff.
-- Settings bleibt ein normales natives Settings-Fenster; die Pixel-OS-Chrome gilt vorerst fuer das Hauptfenster.
+- Settings bleibt ein normales natives Settings-Fenster; die Pixel-OS-HUD-Leiste gilt vorerst fuer das Hauptfenster.
 
 ## Arbeitsregel fuer den naechsten Agent
 

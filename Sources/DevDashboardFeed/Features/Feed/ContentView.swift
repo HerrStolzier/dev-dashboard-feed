@@ -40,11 +40,12 @@ struct ContentView: View {
 
     private var chromeBar: some View {
         HStack(spacing: 14) {
-            HStack(spacing: 8) {
-                chromeLight(PixelpunkTheme.magenta)
-                chromeLight(PixelpunkTheme.amber)
-                chromeLight(PixelpunkTheme.green)
-            }
+            PixelpunkBadge(text: "Local Feed", accent: theme.accent)
+
+            Text(statusText)
+                .font(.system(size: 11, weight: .black, design: .monospaced))
+                .foregroundStyle(PixelpunkTheme.muted)
+                .lineLimit(1)
 
             Spacer()
 
@@ -75,17 +76,6 @@ struct ContentView: View {
                 .fill(PixelpunkTheme.border)
                 .frame(height: 1)
         }
-    }
-
-    private func chromeLight(_ color: Color) -> some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(color)
-            .frame(width: 12, height: 12)
-            .overlay {
-                RoundedRectangle(cornerRadius: 2)
-                    .stroke(Color.black.opacity(0.55), lineWidth: 2)
-            }
-            .shadow(color: color.opacity(0.5), radius: 5)
     }
 
     private var sidebar: some View {
@@ -199,6 +189,12 @@ struct ContentView: View {
         }
 
         return "The app is reading \(appModel.documents.count) local feed item(s), including manual HTML files and generated project digests."
+    }
+
+    private var statusText: String {
+        let repoCount = appModel.projectRepos.count
+        let itemCount = appModel.documents.count
+        return "\(itemCount) item\(itemCount == 1 ? "" : "s") · \(repoCount) repo\(repoCount == 1 ? "" : "s")"
     }
 
     private func ensureValidSelection() {
