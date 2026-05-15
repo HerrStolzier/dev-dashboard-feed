@@ -75,7 +75,7 @@ Wie ein privates, buntes Social-Media-Devboard fuer eigene Projekte, nur lokal, 
 - Pixelpunk/Game-HUD als aktuelle visuelle Richtung: spielerisch, farbig, leicht pixelig, aber weiterhin gut lesbar
 - Repos duerfen sich wie Quests/Welten anfuehlen; Daily Digests wie Quest Logs oder Tagesberichte
 
-Die App soll wie ein privates Projekt-Social-Feed wirken: farbig, energievoll und trotzdem lokal beherrschbar. Die aktuelle UI-Richtung ist "Pixelpunk Devboard": dunkles TurboQuant-Fundament, neonartige Projektfarben, pixelige Panel-Kanten, monospaced Badges, Quest-/XP-Sprache und Game-HUD-Energie ohne reine Retro-Parodie.
+Die App soll wie ein privates Projekt-Social-Feed wirken: farbig, energievoll und trotzdem lokal beherrschbar. Die aktuelle UI-Richtung ist "Pixelpunk Devboard": ein geschlossenes kleines Pixel-OS mit eigenem Fensterrahmen, Cartridge-Sidebar, integrierter HUD-Topbar, neonartigen Projektfarben, pixeligen Panel-Kanten, monospaced Badges, Quest-/XP-Sprache und Game-HUD-Energie ohne reine Retro-Parodie.
 
 ## Technische Stolpersteine
 

@@ -13,6 +13,7 @@ struct DevDashboardFeedApp: App {
         WindowGroup("Dev Dashboard Feed") {
             ContentView(appModel: appModel)
         }
+        .windowStyle(.hiddenTitleBar)
 
         Settings {
             SettingsView(appModel: appModel)

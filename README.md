@@ -105,8 +105,11 @@ whether the next product step should be the HTML folder file watcher.
 ## Visual Direction
 
 The current design target is **Pixelpunk Devboard**. It keeps the dark
-TurboQuant base, but adds a playful game-interface layer:
+TurboQuant base, but adds a playful game-interface layer inspired by the
+current mockup direction:
 
+- the whole app reads as a small Pixel-OS, not a normal app with pixel accents
+- the main surface uses one outer frame with integrated chrome and actions
 - project cards feel like quest cards or cartridges
 - Daily Digests read like quest logs
 - badges use `LVL`, `XP`, status, and artifact language

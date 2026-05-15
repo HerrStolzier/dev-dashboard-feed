@@ -43,6 +43,7 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - README, AGENTS und current-status koennen bei schnellen Produktwechseln auseinanderlaufen. Bei Richtungswechseln immer mindestens README und current-status zusammen pruefen.
 - Pixelpunk soll als Interface-Sprache funktionieren, nicht als reine Deko. Gute Anwendung: Quest-/Artifact-Karten, LVL/XP-Badges, dunkle Panels, neonartige Akzente. Schlechte Anwendung: alles schwer lesbar verpixeln.
 - Pixelpunk wird unstimmig, wenn native Systemauswahl, viele verschiedene Corner-Radii, vollfarbige Sektion-Outlines und riesige Panelbreiten gleichzeitig auftreten. Erst ein gemeinsames Panel- und Auswahlmodell stabilisieren, dann Details verspielter machen.
+- Das Mockup-Ziel ist staerker als "Pixel-Akzente": Es ist ein eigenes kleines Pixel-OS. App-Rahmen, Sidebar, Topbar, Cards und Detailmodule muessen aus einem System kommen, sonst wirkt es sofort zusammengesteckt.
 
 ## Workflow Gotchas
 

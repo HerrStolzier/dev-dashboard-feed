@@ -12,7 +12,7 @@ enum PixelpunkTheme {
     static let amber = Color(red: 1.0, green: 0.78, blue: 0.25)
     static let border = Color.white.opacity(0.14)
     static let cornerRadius: CGFloat = 5
-    static let detailMaxWidth: CGFloat = 980
+    static let detailMaxWidth: CGFloat = 1120
 
     static var heroGradient: LinearGradient {
         LinearGradient(
@@ -39,6 +39,93 @@ enum PixelpunkTheme {
                 startRadius: 60,
                 endRadius: 620
             )
+        }
+    }
+
+    static func accent(for document: DocumentItem) -> Color {
+        Color(devboardHex: document.accentColor ?? "#38bdf8")
+    }
+}
+
+struct PixelpunkProjectTheme {
+    let accent: Color
+    let glow: Color
+    let background: Color
+
+    init(accent: Color, glow: Color? = nil, background: Color = PixelpunkTheme.background) {
+        self.accent = accent
+        self.glow = glow ?? accent
+        self.background = background
+    }
+
+    static func theme(for document: DocumentItem?) -> PixelpunkProjectTheme {
+        guard let document else {
+            return PixelpunkProjectTheme(accent: PixelpunkTheme.cyan)
+        }
+
+        return PixelpunkProjectTheme(accent: PixelpunkTheme.accent(for: document))
+    }
+}
+
+struct PixelpunkAppFrame<Content: View>: View {
+    let theme: PixelpunkProjectTheme
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .background(
+                ZStack {
+                    theme.background
+
+                    RadialGradient(
+                        colors: [theme.glow.opacity(0.24), .clear],
+                        center: .bottomTrailing,
+                        startRadius: 40,
+                        endRadius: 680
+                    )
+
+                    pixelGrid
+                        .opacity(0.26)
+                }
+            )
+            .overlay {
+                Rectangle()
+                    .stroke(Color.black.opacity(0.78), lineWidth: 8)
+            }
+            .overlay {
+                Rectangle()
+                    .stroke(PixelpunkTheme.border, lineWidth: 1)
+                    .padding(7)
+            }
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Color.black.opacity(0.34))
+                    .frame(height: 1)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 42)
+            }
+    }
+
+    private var pixelGrid: some View {
+        Canvas { context, size in
+            let step: CGFloat = 8
+            var path = Path()
+
+            var x: CGFloat = 0
+            while x < size.width {
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x, y: size.height))
+                x += step
+            }
+
+            var y: CGFloat = 0
+            while y < size.height {
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+                y += step
+            }
+
+            context.stroke(path, with: .color(Color.white.opacity(0.045)), lineWidth: 1)
         }
     }
 }
@@ -83,6 +170,37 @@ struct PixelpunkPanel: ViewModifier {
         } else {
             AnyShapeStyle(isRaised ? PixelpunkTheme.panelRaised : PixelpunkTheme.panel)
         }
+    }
+}
+
+struct PixelpunkModule<Content: View>: View {
+    let title: String
+    var icon: String?
+    var accent: Color
+    var isCompact = false
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: isCompact ? 8 : 12) {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 14, weight: .black, design: .monospaced))
+                    .foregroundStyle(accent)
+                    .textCase(.uppercase)
+
+                Spacer()
+
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .black))
+                        .foregroundStyle(PixelpunkTheme.muted)
+                }
+            }
+
+            content
+        }
+        .padding(isCompact ? 12 : 16)
+        .pixelpunkPanel(accent: accent, isRaised: false)
     }
 }
 

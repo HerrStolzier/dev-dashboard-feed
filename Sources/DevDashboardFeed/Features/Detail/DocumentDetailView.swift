@@ -7,63 +7,51 @@ struct DocumentDetailView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 14) {
                 header
 
-                VStack(alignment: .leading, spacing: 10) {
-                    sectionTitle("Mission Brief")
+                PixelpunkModule(title: "Mission Brief", icon: "scroll.fill", accent: accentColor, isCompact: true) {
                     Text(document.summary)
-                        .font(.system(.body, design: .rounded))
-                        .foregroundStyle(PixelpunkTheme.muted)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(PixelpunkTheme.ink.opacity(0.82))
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(18)
-                .pixelpunkPanel(accent: accentColor)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    sectionTitle("Erklaerbaer Power-Up")
+                PixelpunkModule(title: "Erklaerbaer Power-Up", icon: "star.square.fill", accent: PixelpunkTheme.amber, isCompact: true) {
+                    HStack(alignment: .top, spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(PixelpunkTheme.amber.opacity(0.18))
+                                .frame(width: 42, height: 42)
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 20, weight: .black))
+                                .foregroundStyle(PixelpunkTheme.amber)
+                        }
 
-                    if let explainer = document.explainer {
-                        Text(explainer)
-                            .font(.system(.body, design: .rounded))
-                            .foregroundStyle(PixelpunkTheme.ink)
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(PixelpunkTheme.amber.opacity(0.12), in: RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
-                                    .stroke(PixelpunkTheme.amber.opacity(0.55), lineWidth: 1)
-                            }
-                    } else {
-                        Text("No Erklaerbaer block was detected in this HTML file yet.")
-                            .font(.system(.body, design: .rounded))
-                            .foregroundStyle(PixelpunkTheme.muted)
+                        Text(document.explainer ?? "No Erklaerbaer block was detected in this HTML file yet.")
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .foregroundStyle(PixelpunkTheme.ink.opacity(0.86))
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(18)
-                .pixelpunkPanel(accent: accentColor)
 
-                VStack(alignment: .leading, spacing: 10) {
-                    sectionTitle("Artifact Preview")
-
+                PixelpunkModule(title: "Artifact Preview", accent: accentColor) {
                     previewSection
                 }
-                .padding(18)
-                .pixelpunkPanel(accent: accentColor)
             }
             .frame(maxWidth: PixelpunkTheme.detailMaxWidth, alignment: .leading)
-            .padding(28)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 18)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .background(PixelpunkTheme.appBackground)
-        .navigationTitle(document.title)
         .onChange(of: document.id, initial: true) { _, _ in
             previewLoadState = .idle
         }
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 15) {
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: 8) {
                     headerBadges
@@ -75,39 +63,34 @@ struct DocumentDetailView: View {
             }
 
             Text(document.title)
-                .font(.system(size: 42, weight: .black, design: .rounded))
+                .font(.system(size: 44, weight: .black, design: .monospaced))
                 .foregroundStyle(PixelpunkTheme.heroGradient)
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(2)
+                .minimumScaleFactor(0.72)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 7) {
                 Label(document.project, systemImage: document.sourceKind == .dailyDigest ? "sparkles.rectangle.stack.fill" : "folder.fill")
                     .lineLimit(1)
                     .truncationMode(.middle)
 
-                Label(document.path, systemImage: "shippingbox.fill")
+                Label(document.path, systemImage: "doc.badge.gearshape.fill")
                     .lineLimit(1)
                     .truncationMode(.middle)
             }
-            .font(.system(.subheadline, design: .monospaced).weight(.bold))
+            .font(.system(size: 13, weight: .bold, design: .monospaced))
             .foregroundStyle(PixelpunkTheme.muted)
         }
-        .padding(22)
+        .padding(20)
         .pixelpunkPanel(accent: accentColor, isRaised: true)
     }
 
     private var headerBadges: some View {
         Group {
-            PixelpunkBadge(text: document.sourceKind == .dailyDigest ? "Quest Complete" : "Source Artifact", accent: accentColor)
+            PixelpunkBadge(text: document.sourceKind == .dailyDigest ? "Quest Log" : "Source", accent: accentColor)
+            PixelpunkBadge(text: "Artifact", accent: PixelpunkTheme.cyan)
             PixelpunkBadge(text: document.relativeTimestamp, accent: PixelpunkTheme.green)
             PixelpunkBadge(text: "XP \(max(25, document.summary.count))", accent: PixelpunkTheme.amber)
         }
-    }
-
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text)
-            .font(.system(.title3, design: .monospaced).weight(.black))
-            .foregroundStyle(PixelpunkTheme.ink)
     }
 
     @ViewBuilder
@@ -138,22 +121,23 @@ struct DocumentDetailView: View {
 
         case .unavailable(let message):
             VStack(spacing: 12) {
-                Image(systemName: "display.trianglebadge.exclamationmark")
-                    .font(.system(size: 36, weight: .bold))
-                    .foregroundStyle(PixelpunkTheme.amber)
+                Image(systemName: "lock.rectangle.stack.fill")
+                    .font(.system(size: 38, weight: .black))
+                    .foregroundStyle(PixelpunkTheme.muted)
 
                 Text("Preview Locked")
-                    .font(.system(.title2, design: .monospaced).weight(.black))
+                    .font(.system(size: 18, weight: .black, design: .monospaced))
                     .foregroundStyle(PixelpunkTheme.ink)
 
                 Text(message)
                     .font(.system(.body, design: .rounded))
                     .foregroundStyle(PixelpunkTheme.muted)
                     .multilineTextAlignment(.center)
-                    .frame(maxWidth: 460)
+                    .frame(maxWidth: 560)
             }
-            .frame(maxWidth: .infinity, minHeight: 220)
-            .background(PixelpunkTheme.panelRaised, in: RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
+            .frame(maxWidth: .infinity, minHeight: 160)
+            .padding(.vertical, 18)
+            .background(PixelpunkTheme.panelRaised.opacity(0.58), in: RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius))
             .overlay {
                 RoundedRectangle(cornerRadius: PixelpunkTheme.cornerRadius)
                     .stroke(PixelpunkTheme.border, lineWidth: 1)
@@ -171,11 +155,11 @@ struct DocumentDetailView: View {
             VStack(spacing: 12) {
                 ProgressView()
                     .controlSize(.large)
-                Text("Loading the local HTML preview...")
-                    .font(.headline)
-                Text("This also gives the document a chance to resolve nearby CSS, images, and other local assets.")
+                Text("Loading local artifact...")
+                    .font(.system(.headline, design: .monospaced))
+                Text("Nearby CSS, images, and local assets get a chance to resolve.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(PixelpunkTheme.muted)
                     .multilineTextAlignment(.center)
             }
             .padding(24)
@@ -195,6 +179,6 @@ struct DocumentDetailView: View {
     }
 
     private var accentColor: Color {
-        Color(devboardHex: document.accentColor ?? "#38bdf8")
+        PixelpunkTheme.accent(for: document)
     }
 }

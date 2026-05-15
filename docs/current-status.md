@@ -35,6 +35,13 @@
   - Detailbereiche auf gemeinsame Maximalbreite gebracht
   - Panel-Formen, Ecken und Borders vereinheitlicht
   - Detailsektionen nutzen jetzt eine ruhigere gemeinsame Akzentlogik statt konkurrierender Vollfarb-Outlines
+- Pixel-OS-Mockup als Zielrichtung uebernommen und UI-Shell umgebaut:
+  - `NavigationSplitView` durch eigene Pixelpunk-App-Shell ersetzt
+  - Outer App Frame mit Chrome-Leiste, Sidebar, Detail-Topbar und integrierten Action-Buttons
+  - native App-Titelleiste fuer das Hauptfenster ausgeblendet, damit die eigene Pixel-OS-Chrome-Leiste nicht doppelt wirkt
+  - Sidebar-Cards naeher an Cartridge-/Quest-Karten mit Auswahl-Lasche
+  - Detailansicht kompakter als HUD-Module fuer Header, Mission Brief, Erklaerbaer Power-Up und Artifact Preview
+  - Project-Accent wird als Shell-/Panel-Thema verwendet
 - Weiterentwicklungsplan fuer den echten 20:00-Daily-Digest-Background-Agent erstellt: `daily-digest-background-agent-plan.md`.
 - Produkt-Richtung aktualisiert: Devboard ist jetzt ein privater, bunter Projekt-Social-Feed, nicht mehr primaer ein ruhiger Reader.
 - TurboQuant-Referenz `/Users/clawdkent/Desktop/projekte-codex/turboquant-mlx-report.html` als Designrichtung uebernommen.
@@ -159,6 +166,7 @@
 - Pixelpunk-UI-Runde am 2026-05-15:
   - `swift build` erfolgreich nach der ersten Designsystem-/UI-Iteration.
   - Nach Formreview erneut `swift build`, `swift test` und `git diff --check` erfolgreich.
+  - Nach Pixel-OS-Shell-Umbau erneut `swift build` erfolgreich.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -181,6 +189,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - README bei groesseren Richtungswechseln mitziehen, damit oeffentliche Uebersicht und interne Handoff-Doku nicht auseinanderlaufen
 - Pixelpunk-Iteration visuell in der echten App pruefen und danach Settings/Repo-Verwaltung passend nachziehen
 - Formen weiter vereinheitlichen: weniger Outline-Arten, klare Card-Hierarchie, keine System-Controls, die gegen den Game-HUD-Look arbeiten
+- Mockup-Details weiter angleichen: Dither/Texture, pixeligere Icons, kompaktere Module, Theme-Varianten pro Projekt
 
 ## Offene Luecken und Risiken
 
@@ -197,6 +206,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - Der aeltere breite Produktplan neben dem Repo beschreibt noch das urspruengliche ruhigere HTML-Reader-Ziel; README und AGENTS sind jetzt aktueller fuer die bunte Devboard-Richtung.
 - Settings ist noch weitgehend native `Form` und optisch nicht auf Pixelpunk umgestellt.
 - Toolbar-Buttons und Sidebar-/Detail-Proportionen brauchen nach echter Sichtprobe wahrscheinlich noch Feinschliff.
+- Settings bleibt ein normales natives Settings-Fenster; die Pixel-OS-Chrome gilt vorerst fuer das Hauptfenster.
 
 ## Arbeitsregel fuer den naechsten Agent
 

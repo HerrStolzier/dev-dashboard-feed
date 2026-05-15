@@ -4,97 +4,188 @@ struct ContentView: View {
     let appModel: AppModel
     @State private var selection: DocumentItem.ID?
 
+    private var selectedDocument: DocumentItem? {
+        appModel.documents.first(where: { $0.id == selection })
+    }
+
+    private var theme: PixelpunkProjectTheme {
+        PixelpunkProjectTheme.theme(for: selectedDocument)
+    }
+
     var body: some View {
-        NavigationSplitView {
-            VStack(alignment: .leading, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("DEVBOARD")
-                        .font(.system(size: 11, weight: .black, design: .monospaced))
-                        .foregroundStyle(PixelpunkTheme.cyan)
+        PixelpunkAppFrame(theme: theme) {
+            VStack(spacing: 0) {
+                chromeBar
 
-                    Text("Quest Feed")
-                        .font(.system(.title3, design: .rounded).weight(.black))
-                        .foregroundStyle(PixelpunkTheme.ink)
-                }
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
+                HStack(spacing: 0) {
+                    sidebar
 
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(appModel.documents) { document in
-                            Button {
-                                selection = document.id
-                            } label: {
-                                FeedCardView(
-                                    document: document,
-                                    isSelected: selection == document.id
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 16)
-                }
-            }
-            .frame(minWidth: 300)
-            .background(PixelpunkTheme.background)
-            .navigationTitle("Quest Feed")
-            .toolbarBackground(PixelpunkTheme.background, for: .windowToolbar)
-        } detail: {
-            ZStack {
-                PixelpunkTheme.appBackground
-                    .ignoresSafeArea()
+                    Rectangle()
+                        .fill(PixelpunkTheme.border)
+                        .frame(width: 1)
 
-                if let selectedDocument = appModel.documents.first(where: { $0.id == selection }) {
-                    DocumentDetailView(document: selectedDocument)
-                } else {
-                    VStack(spacing: 16) {
-                        PixelpunkBadge(text: "No quest selected", accent: PixelpunkTheme.amber)
-
-                        Text("Pick a Project Card")
-                            .font(.system(size: 34, weight: .black, design: .rounded))
-                            .foregroundStyle(PixelpunkTheme.ink)
-
-                        Text(detailDescription)
-                            .font(.system(.body, design: .rounded))
-                            .foregroundStyle(PixelpunkTheme.muted)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: 520)
-                    }
-                    .padding(28)
-                    .pixelpunkPanel(accent: PixelpunkTheme.amber, isRaised: true)
-                    .padding(40)
+                    detailShell
                 }
             }
         }
-        .frame(minWidth: 980, minHeight: 620)
-        .toolbar {
-            ToolbarItem {
-                Button {
-                    appModel.runDailyDigests()
-                } label: {
-                    Label(appModel.isDigestRunInProgress ? "Running" : "Run Digests", systemImage: "bolt.fill")
-                }
-                .disabled(appModel.projectRepos.filter(\.isActive).isEmpty || appModel.isDigestRunInProgress)
-                .buttonStyle(PixelpunkButtonStyle(accent: PixelpunkTheme.green))
-            }
-
-            ToolbarItem {
-                Button {
-                    appModel.chooseWatchedFolder()
-                } label: {
-                    Label("Choose Folder", systemImage: "folder.badge.plus")
-                }
-                .buttonStyle(PixelpunkButtonStyle(accent: PixelpunkTheme.cyan))
-            }
-        }
+        .frame(minWidth: 1120, minHeight: 700)
         .preferredColorScheme(.dark)
         .onAppear {
             ensureValidSelection()
         }
         .onChange(of: appModel.documents) {
             ensureValidSelection()
+        }
+    }
+
+    private var chromeBar: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 8) {
+                chromeLight(PixelpunkTheme.magenta)
+                chromeLight(PixelpunkTheme.amber)
+                chromeLight(PixelpunkTheme.green)
+            }
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Button {
+                    appModel.runDailyDigests()
+                } label: {
+                    Image(systemName: "bolt.fill")
+                        .frame(width: 18, height: 18)
+                }
+                .disabled(appModel.projectRepos.filter(\.isActive).isEmpty || appModel.isDigestRunInProgress)
+                .buttonStyle(PixelpunkButtonStyle(accent: theme.accent))
+
+                Button {
+                    appModel.chooseWatchedFolder()
+                } label: {
+                    Image(systemName: "folder.badge.plus")
+                        .frame(width: 18, height: 18)
+                }
+                .buttonStyle(PixelpunkButtonStyle(accent: PixelpunkTheme.cyan))
+            }
+        }
+        .padding(.horizontal, 18)
+        .frame(height: 44)
+        .background(Color.black.opacity(0.28))
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(PixelpunkTheme.border)
+                .frame(height: 1)
+        }
+    }
+
+    private func chromeLight(_ color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 2)
+            .fill(color)
+            .frame(width: 12, height: 12)
+            .overlay {
+                RoundedRectangle(cornerRadius: 2)
+                    .stroke(Color.black.opacity(0.55), lineWidth: 2)
+            }
+            .shadow(color: color.opacity(0.5), radius: 5)
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("DEVBOARD")
+                    .font(.system(size: 13, weight: .black, design: .monospaced))
+                    .foregroundStyle(theme.accent)
+
+                Text("QUEST FEED")
+                    .font(.system(size: 18, weight: .black, design: .monospaced))
+                    .foregroundStyle(PixelpunkTheme.ink)
+            }
+            .padding(.horizontal, 18)
+            .padding(.top, 18)
+
+            ScrollView {
+                LazyVStack(spacing: 14) {
+                    ForEach(appModel.documents) { document in
+                        Button {
+                            selection = document.id
+                        } label: {
+                            FeedCardView(
+                                document: document,
+                                isSelected: selection == document.id
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 20)
+            }
+        }
+        .frame(width: 314)
+        .background(
+            ZStack {
+                PixelpunkTheme.background.opacity(0.94)
+
+                LinearGradient(
+                    colors: [theme.glow.opacity(0.12), .clear],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        )
+    }
+
+    private var detailShell: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: selectedDocument?.sourceKind == .dailyDigest ? "sparkles.rectangle.stack.fill" : "rectangle.stack.fill")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundStyle(PixelpunkTheme.ink)
+
+                Text(selectedDocument?.title ?? "No Quest Selected")
+                    .font(.system(size: 19, weight: .black, design: .monospaced))
+                    .foregroundStyle(PixelpunkTheme.ink)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Spacer()
+            }
+            .padding(.horizontal, 18)
+            .frame(height: 44)
+            .background(Color.black.opacity(0.20))
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(PixelpunkTheme.border)
+                    .frame(height: 1)
+            }
+
+            if let selectedDocument {
+                DocumentDetailView(document: selectedDocument)
+            } else {
+                emptyState
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        ZStack {
+            PixelpunkTheme.appBackground
+
+            VStack(spacing: 14) {
+                PixelpunkBadge(text: "No quest selected", accent: PixelpunkTheme.amber)
+
+                Text("Pick a Project Card")
+                    .font(.system(size: 34, weight: .black, design: .monospaced))
+                    .foregroundStyle(PixelpunkTheme.ink)
+
+                Text(detailDescription)
+                    .font(.system(.body, design: .rounded))
+                    .foregroundStyle(PixelpunkTheme.muted)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 520)
+            }
+            .padding(28)
+            .pixelpunkPanel(accent: PixelpunkTheme.amber, isRaised: true)
+            .padding(40)
         }
     }
 
