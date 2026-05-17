@@ -43,12 +43,20 @@ enum DigestCLI {
         let metadataStore = launchOverrides.digestMetadataStoreURL
             .map { DigestRunMetadataStore(storeURL: $0) }
             ?? DigestRunMetadataStore()
+        let historyStore = launchOverrides.digestHistoryStoreURL
+            .map { DigestRunHistoryStore(storeURL: $0) }
+            ?? DigestRunHistoryStore()
+        let runLock = launchOverrides.digestLockURL
+            .map { DigestRunLock(lockURL: $0) }
+            ?? DigestRunLock()
         let digestOutputRoot = launchOverrides.digestOutputRootURL
             ?? DigestRuntime.defaultDigestOutputRoot()
 
         return DigestRuntime(
             projectRepoStore: projectRepoStore,
             metadataStore: metadataStore,
+            historyStore: historyStore,
+            runLock: runLock,
             digestOutputRoot: digestOutputRoot
         )
     }

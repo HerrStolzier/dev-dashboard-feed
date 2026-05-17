@@ -19,6 +19,8 @@ REPO_DIR="$TEMP_ROOT/repo"
 DIGEST_DIR="$TEMP_ROOT/digests"
 STORE_FILE="$TEMP_ROOT/project-repos.json"
 METADATA_FILE="$TEMP_ROOT/digest-run-metadata.json"
+HISTORY_FILE="$TEMP_ROOT/digest-run-history.json"
+LOCK_FILE="$TEMP_ROOT/daily-digest.lock"
 NOW="2026-05-06T20:00:00Z"
 
 mkdir -p "$REPO_DIR" "$DIGEST_DIR"
@@ -54,6 +56,8 @@ BUILD_BINARY="$(swift build --package-path "$ROOT_DIR" --show-bin-path)/$APP_NAM
   --project-repo-store "$STORE_FILE" \
   --digest-output-root "$DIGEST_DIR" \
   --digest-metadata-store "$METADATA_FILE" \
+  --digest-history-store "$HISTORY_FILE" \
+  --digest-lock "$LOCK_FILE" \
   --digest-now "$NOW"
 
 DIGEST_FILE="$DIGEST_DIR/verify-repo-11111111/2026-05-06.html"
@@ -62,5 +66,7 @@ grep -q "Verify daily digest agent" "$DIGEST_FILE"
 grep -q "background: #0a0a0f" "$DIGEST_FILE"
 grep -q "lastSuccessfulCrawlAt" "$STORE_FILE"
 grep -q "lastRunAt" "$METADATA_FILE"
+grep -q "verify-repo" "$HISTORY_FILE"
+grep -q "created" "$HISTORY_FILE"
 
 echo "Verified Daily Digest CLI against temporary Git repo: $DIGEST_FILE"

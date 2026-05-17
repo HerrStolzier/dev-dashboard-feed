@@ -6,9 +6,11 @@ protocol GitActivityScanning: Sendable {
 
 struct GitActivityScanner: GitActivityScanning {
     private let gitPath: String
+    private let timeout: TimeInterval
 
-    init(gitPath: String = "/usr/bin/git") {
+    init(gitPath: String = "/usr/bin/git", timeout: TimeInterval = 45) {
         self.gitPath = gitPath
+        self.timeout = timeout
     }
 
     func activity(for repo: ProjectRepo, since: Date?) throws -> GitRepoActivity {
@@ -91,6 +93,21 @@ struct GitActivityScanner: GitActivityScanning {
         process.standardOutput = output
         process.standardError = error
         try process.run()
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+
+        if process.isRunning {
+            process.terminate()
+            Thread.sleep(forTimeInterval: 0.2)
+            if process.isRunning {
+                process.interrupt()
+            }
+            process.waitUntilExit()
+            throw GitActivityScannerError.gitTimedOut(arguments.joined(separator: " "))
+        }
+
         process.waitUntilExit()
 
         let outputText = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
@@ -106,6 +123,7 @@ struct GitActivityScanner: GitActivityScanning {
 enum GitActivityScannerError: LocalizedError, Equatable {
     case notAGitRepository(String)
     case gitFailed(String)
+    case gitTimedOut(String)
     case unparseableLogLine(String)
     case unparseableDate(String)
 
@@ -115,6 +133,8 @@ enum GitActivityScannerError: LocalizedError, Equatable {
             "This folder is not a Git repository: \(path)"
         case .gitFailed(let message):
             message.isEmpty ? "Git could not read activity for this repository." : message
+        case .gitTimedOut(let command):
+            "Git timed out while reading repository activity: git \(command)"
         case .unparseableLogLine:
             "Git returned a log line Devboard could not parse."
         case .unparseableDate(let value):

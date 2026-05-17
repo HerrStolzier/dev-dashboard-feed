@@ -48,6 +48,64 @@ import Testing
     #expect(try store.load() == metadata)
 }
 
+@Test func digestRunHistoryStoreKeepsLatestEntries() async throws {
+    let storeURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathComponent("history.json")
+    let store = DigestRunHistoryStore(storeURL: storeURL, limit: 2)
+
+    try store.append(
+        results: [
+            .created(repoName: "one", commitCount: 1),
+            .failed(repoName: "two", message: "boom"),
+            .skipped(repoName: "three"),
+        ],
+        runAt: Date(timeIntervalSince1970: 1_778_096_800),
+        source: .agent
+    )
+
+    let history = try store.load()
+    #expect(history.entries.map(\.repoName) == ["two", "three"])
+    #expect(history.entries.map(\.outcome) == [.failed, .skipped])
+    #expect(history.entries.first?.errorMessage == "boom")
+}
+
+@Test func digestRunLockRejectsConcurrentRuns() async throws {
+    let lockURL = FileManager.default.temporaryDirectory
+        .appendingPathComponent(UUID().uuidString)
+        .appendingPathComponent("digest.lock")
+    let lock = DigestRunLock(lockURL: lockURL)
+
+    _ = try lock.withLock {
+        #expect(throws: DigestRunLockError.alreadyRunning) {
+            try lock.withLock {}
+        }
+    }
+}
+
+@Test func gitActivityScannerTimesOutHungGitProcess() async throws {
+    let fileManager = FileManager.default
+    let tempRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+    try fileManager.createDirectory(at: tempRoot, withIntermediateDirectories: true)
+    let fakeGit = tempRoot.appendingPathComponent("fake-git.sh")
+    try Data("#!/bin/sh\nsleep 2\n".utf8).write(to: fakeGit)
+    try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: fakeGit.path)
+    let repo = ProjectRepo(
+        id: UUID(),
+        name: "hung",
+        path: tempRoot.path,
+        accentColor: "#38bdf8",
+        isActive: true,
+        lastSuccessfulCrawlAt: nil
+    )
+
+    let scanner = GitActivityScanner(gitPath: fakeGit.path, timeout: 0.1)
+
+    #expect(throws: GitActivityScannerError.gitTimedOut("rev-parse --is-inside-work-tree")) {
+        _ = try scanner.activity(for: repo, since: nil)
+    }
+}
+
 @Test func gitActivityScannerReadsCommitsSinceDate() async throws {
     let repoURL = try makeTemporaryGitRepo()
     try runGit(["config", "user.name", "Devboard Test"], in: repoURL)
@@ -145,6 +203,10 @@ import Testing
         folderAccessController: DigestFakeFolderAccessController(),
         documentScanner: DocumentScanner(),
         projectRepoStore: ProjectRepoStore(storeURL: storeURL),
+        historyStore: DigestRunHistoryStore(
+            storeURL: tempRoot.appendingPathComponent("history.json")
+        ),
+        runLock: DigestRunLock(lockURL: tempRoot.appendingPathComponent("digest.lock")),
         gitActivityScanner: scanner,
         digestOutputRoot: outputRoot,
         launchOverrides: LaunchOverrides(arguments: ["DevDashboardFeed"], fileManager: fileManager)
@@ -154,6 +216,8 @@ import Testing
     let results = appModel.runDailyDigestsForTesting(now: Date(timeIntervalSince1970: 1_777_464_000))
 
     #expect(results == [.created(repoName: "timeline", commitCount: 1)])
+    #expect(appModel.digestRunHistory.entries.first?.repoName == "timeline")
+    #expect(appModel.digestRunHistory.entries.first?.outcome == .created)
     #expect(appModel.documents.contains { $0.sourceKind == .dailyDigest && $0.title.contains("timeline") })
     #expect(appModel.documents.first(where: { $0.sourceKind == .dailyDigest })?.accentColor == "#38bdf8")
 }
@@ -165,6 +229,7 @@ import Testing
     let outputRoot = tempRoot.appendingPathComponent("digests", isDirectory: true)
     let storeURL = tempRoot.appendingPathComponent("repos.json")
     let metadataURL = tempRoot.appendingPathComponent("metadata.json")
+    let historyURL = tempRoot.appendingPathComponent("history.json")
     try fileManager.createDirectory(at: tempRoot, withIntermediateDirectories: true)
 
     let repo = ProjectRepo(
@@ -184,6 +249,10 @@ import Testing
         documentScanner: DocumentScanner(),
         projectRepoStore: repoStore,
         metadataStore: metadataStore,
+        historyStore: DigestRunHistoryStore(
+            storeURL: historyURL
+        ),
+        runLock: DigestRunLock(lockURL: tempRoot.appendingPathComponent("digest.lock")),
         gitActivityScanner: FakeGitActivityScanner(
             activity: GitRepoActivity(repo: repo, commits: [])
         ),
@@ -229,11 +298,17 @@ import Testing
             nextScheduledRunAt: Date(timeIntervalSince1970: 1_778_183_200)
         )
     )
+    try DigestRunHistoryStore(storeURL: historyURL).append(
+        results: [.created(repoName: "agent-flow", commitCount: 1)],
+        runAt: runDate,
+        source: .agent
+    )
 
     let changed = appModel.refreshDigestStateFromStores(now: runDate)
 
     #expect(changed)
     #expect(appModel.digestRunMetadata.lastRunAt == runDate)
+    #expect(appModel.digestRunHistory.entries.first?.repoName == "agent-flow")
     #expect(appModel.projectRepos.first?.lastSuccessfulCrawlAt == runDate)
     #expect(appModel.documents.contains { $0.sourceKind == .dailyDigest && $0.title.contains("agent-flow") })
 }
@@ -243,6 +318,7 @@ import Testing
     let tempRoot = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
     let outputRoot = tempRoot.appendingPathComponent("digests", isDirectory: true)
     let storeURL = tempRoot.appendingPathComponent("repos.json")
+    let historyURL = tempRoot.appendingPathComponent("history.json")
     try fileManager.createDirectory(at: tempRoot, withIntermediateDirectories: true)
 
     let goodRepo = ProjectRepo(
@@ -269,6 +345,8 @@ import Testing
             metadataStore: DigestRunMetadataStore(
                 storeURL: tempRoot.appendingPathComponent("metadata.json")
             ),
+            historyStore: DigestRunHistoryStore(storeURL: historyURL),
+            runLock: DigestRunLock(lockURL: tempRoot.appendingPathComponent("digest.lock")),
             scanner: ConditionalGitActivityScanner(
                 activity: GitRepoActivity(
                     repo: goodRepo,
@@ -294,6 +372,7 @@ import Testing
     let restoredMetadata = try DigestRunMetadataStore(
         storeURL: tempRoot.appendingPathComponent("metadata.json")
     ).load()
+    let restoredHistory = try DigestRunHistoryStore(storeURL: historyURL).load()
 
     #expect(result.results.contains(.created(repoName: "good", commitCount: 1)))
     #expect(result.results.contains(.failed(repoName: "failing", message: "scanner failed")))
@@ -304,6 +383,8 @@ import Testing
     #expect(restoredMetadata.lastSuccessfulRunAt == nil)
     #expect(restoredMetadata.lastErrorMessage == "failing: scanner failed")
     #expect(restoredMetadata.nextScheduledRunAt != nil)
+    #expect(restoredHistory.entries.map(\.repoName).contains("good"))
+    #expect(restoredHistory.entries.map(\.repoName).contains("failing"))
 }
 
 @Test func digestLaunchAgentPlistUsesEightPmCalendarInterval() async throws {

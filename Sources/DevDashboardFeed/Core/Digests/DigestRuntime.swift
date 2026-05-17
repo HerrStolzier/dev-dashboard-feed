@@ -3,6 +3,8 @@ import Foundation
 struct DigestRuntime {
     let projectRepoStore: ProjectRepoStore
     let metadataStore: DigestRunMetadataStore
+    let historyStore: DigestRunHistoryStore
+    let runLock: DigestRunLock
     let scanner: any GitActivityScanning
     let renderer: DailyDigestRenderer
     let digestOutputRoot: URL
@@ -11,6 +13,8 @@ struct DigestRuntime {
     init(
         projectRepoStore: ProjectRepoStore = ProjectRepoStore(),
         metadataStore: DigestRunMetadataStore = DigestRunMetadataStore(),
+        historyStore: DigestRunHistoryStore = DigestRunHistoryStore(),
+        runLock: DigestRunLock = DigestRunLock(),
         scanner: any GitActivityScanning = GitActivityScanner(),
         renderer: DailyDigestRenderer = DailyDigestRenderer(),
         digestOutputRoot: URL = DigestRuntime.defaultDigestOutputRoot(),
@@ -18,6 +22,8 @@ struct DigestRuntime {
     ) {
         self.projectRepoStore = projectRepoStore
         self.metadataStore = metadataStore
+        self.historyStore = historyStore
+        self.runLock = runLock
         self.scanner = scanner
         self.renderer = renderer
         self.digestOutputRoot = digestOutputRoot

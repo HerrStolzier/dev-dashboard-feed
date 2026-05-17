@@ -4,6 +4,7 @@ struct DailyDigestCommandResult: Sendable {
     let output: DailyDigestRunOutput
     let storeSaveError: String?
     let metadataSaveError: String?
+    let historySaveError: String?
 
     var results: [DigestRunResult] {
         var results = output.results
@@ -14,6 +15,10 @@ struct DailyDigestCommandResult: Sendable {
 
         if let metadataSaveError {
             results.append(.failed(repoName: "Digest Metadata Store", message: metadataSaveError))
+        }
+
+        if let historySaveError {
+            results.append(.failed(repoName: "Digest Run History Store", message: historySaveError))
         }
 
         return results
@@ -43,6 +48,23 @@ struct DailyDigestCommand {
 
     func run(now: Date = .now) -> DailyDigestCommandResult {
         do {
+            return try runtime.runLock.withLock {
+                runUnlocked(now: now)
+            }
+        } catch {
+            return DailyDigestCommandResult(
+                output: DailyDigestRunOutput(updatedRepos: [], results: [
+                    .failed(repoName: "Daily Digest Lock", message: error.localizedDescription),
+                ]),
+                storeSaveError: nil,
+                metadataSaveError: nil,
+                historySaveError: nil
+            )
+        }
+    }
+
+    private func runUnlocked(now: Date) -> DailyDigestCommandResult {
+        do {
             let storedRepos = try runtime.projectRepoStore.load()
             let restoration = repoAccess.restore(storedRepos)
             defer {
@@ -60,17 +82,21 @@ struct DailyDigestCommand {
             do {
                 try runtime.projectRepoStore.save(output.updatedRepos)
                 let metadataSaveError = saveMetadata(for: output, now: now)
+                let historySaveError = saveHistory(for: output, now: now)
                 return DailyDigestCommandResult(
                     output: output,
                     storeSaveError: nil,
-                    metadataSaveError: metadataSaveError
+                    metadataSaveError: metadataSaveError,
+                    historySaveError: historySaveError
                 )
             } catch {
                 let metadataSaveError = saveMetadata(for: output, now: now)
+                let historySaveError = saveHistory(for: output, now: now)
                 return DailyDigestCommandResult(
                     output: output,
                     storeSaveError: error.localizedDescription,
-                    metadataSaveError: metadataSaveError
+                    metadataSaveError: metadataSaveError,
+                    historySaveError: historySaveError
                 )
             }
         } catch {
@@ -79,7 +105,8 @@ struct DailyDigestCommand {
                     .failed(repoName: "Project Repo Store", message: error.localizedDescription),
                 ]),
                 storeSaveError: nil,
-                metadataSaveError: nil
+                metadataSaveError: nil,
+                historySaveError: nil
             )
         }
     }
@@ -103,6 +130,15 @@ struct DailyDigestCommand {
 
         do {
             try runtime.metadataStore.save(metadata)
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+
+    private func saveHistory(for output: DailyDigestRunOutput, now: Date) -> String? {
+        do {
+            try runtime.historyStore.append(results: output.results, runAt: now, source: .agent)
             return nil
         } catch {
             return error.localizedDescription

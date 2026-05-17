@@ -7,6 +7,8 @@ struct LaunchOverrides {
     private let projectRepoStorePath: String?
     private let digestOutputRootPath: String?
     private let digestMetadataStorePath: String?
+    private let digestHistoryStorePath: String?
+    private let digestLockPath: String?
     private let fileManager: FileManager
     let shouldRunDigestsOnce: Bool
     let quiet: Bool
@@ -22,6 +24,8 @@ struct LaunchOverrides {
         self.projectRepoStorePath = LaunchOverrides.value(for: "--project-repo-store", in: arguments)
         self.digestOutputRootPath = LaunchOverrides.value(for: "--digest-output-root", in: arguments)
         self.digestMetadataStorePath = LaunchOverrides.value(for: "--digest-metadata-store", in: arguments)
+        self.digestHistoryStorePath = LaunchOverrides.value(for: "--digest-history-store", in: arguments)
+        self.digestLockPath = LaunchOverrides.value(for: "--digest-lock", in: arguments)
         self.shouldRunDigestsOnce = arguments.contains("--run-digests-once")
         self.quiet = arguments.contains("--quiet")
         self.fileManager = fileManager
@@ -74,6 +78,14 @@ struct LaunchOverrides {
 
     var digestMetadataStoreURL: URL? {
         normalizedWritableFileURL(from: digestMetadataStorePath)
+    }
+
+    var digestHistoryStoreURL: URL? {
+        normalizedWritableFileURL(from: digestHistoryStorePath)
+    }
+
+    var digestLockURL: URL? {
+        normalizedWritableFileURL(from: digestLockPath)
     }
 
     private var watchedFolderURL: URL? {

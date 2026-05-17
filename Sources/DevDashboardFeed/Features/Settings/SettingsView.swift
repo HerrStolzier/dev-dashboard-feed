@@ -70,6 +70,34 @@ struct SettingsView: View {
                                     Text(repo.lastSuccessfulCrawlAt.map { "Last digest run: \(DateFormatter.devboardDay.string(from: $0))" } ?? "No digest run yet.")
                                         .font(.caption)
                                         .foregroundStyle(.tertiary)
+
+                                    let historyEntries = digestHistoryEntries(for: repo)
+                                    if !historyEntries.isEmpty {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            Text("Recent runs")
+                                                .font(.caption.bold())
+                                                .foregroundStyle(.secondary)
+
+                                            ForEach(historyEntries) { entry in
+                                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                                    Label(
+                                                        digestHistoryText(for: entry),
+                                                        systemImage: digestHistoryIcon(for: entry)
+                                                    )
+                                                    .foregroundStyle(digestHistoryColor(for: entry))
+
+                                                    if let errorMessage = entry.errorMessage {
+                                                        Text(errorMessage)
+                                                            .lineLimit(2)
+                                                            .foregroundStyle(.orange)
+                                                            .textSelection(.enabled)
+                                                    }
+                                                }
+                                                .font(.caption2)
+                                            }
+                                        }
+                                        .padding(.top, 4)
+                                    }
                                 }
 
                                 Spacer()
@@ -185,5 +213,47 @@ struct SettingsView: View {
 
     private var watchedFolders: [WatchedFolder] {
         appModel.watchedFolders
+    }
+
+    private func digestHistoryEntries(for repo: ProjectRepo) -> [DigestRunHistoryEntry] {
+        appModel.digestRunHistory.entries
+            .filter { $0.repoName == repo.name }
+            .sorted { $0.runAt > $1.runAt }
+            .prefix(3)
+            .map { $0 }
+    }
+
+    private func digestHistoryText(for entry: DigestRunHistoryEntry) -> String {
+        let date = DateFormatter.devboardDayAndTime.string(from: entry.runAt)
+        switch entry.outcome {
+        case .created:
+            return "\(date): created \(entry.commitCount ?? 0) commit\(entry.commitCount == 1 ? "" : "s")"
+        case .skipped:
+            return "\(date): skipped"
+        case .failed:
+            return "\(date): failed"
+        }
+    }
+
+    private func digestHistoryIcon(for entry: DigestRunHistoryEntry) -> String {
+        switch entry.outcome {
+        case .created:
+            return "checkmark.circle"
+        case .skipped:
+            return "minus.circle"
+        case .failed:
+            return "exclamationmark.triangle"
+        }
+    }
+
+    private func digestHistoryColor(for entry: DigestRunHistoryEntry) -> Color {
+        switch entry.outcome {
+        case .created:
+            return .secondary
+        case .skipped:
+            return .gray
+        case .failed:
+            return .orange
+        }
     }
 }

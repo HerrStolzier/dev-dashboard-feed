@@ -1,9 +1,17 @@
 # Current Status
 
-## Stand vom 2026-05-15
+## Stand vom 2026-05-17
 
 ## Zuletzt abgeschlossen
 
+- Daily-Digest-Stabilitaetsrunde umgesetzt:
+  - kleine persistente Run-History fuer die letzten Digest-Ergebnisse eingefuehrt
+  - App-Run und CLI/LaunchAgent-Run schreiben beide in dieselbe History-Struktur
+  - gemeinsamer File-Lock verhindert gleichzeitige Digest-Schreiblaeufe aus App und Agent
+  - Git-Aufrufe laufen jetzt mit Timeout, damit ein haengender lokaler Git-Prozess den Digest nicht endlos blockiert
+  - Settings zeigt pro Repo die letzten History-Eintraege mit Ergebnis und Fehlermeldung
+  - CLI-Testpfade fuer History-Store und Lock-Datei ergaenzt
+  - Agent-E2E-Script prueft jetzt zusaetzlich, dass Run-History geschrieben wird
 - Erster echter Background-Agent-MVP umgesetzt:
   - gemeinsamer Digest-Runtime-/Command-Pfad fuer App und CLI
   - CLI-Modus `--run-digests-once`
@@ -69,6 +77,8 @@
   - `GitCommitActivity`
   - `GitRepoActivity`
   - `DigestRunResult`
+  - `DigestRunHistory`
+  - `DigestRunHistoryEntry`
   - `DocumentSourceKind`
 - Neue Digest-/Repo-Services:
   - `DigestRuntime`
@@ -83,18 +93,23 @@
   - `DigestLaunchAgentInstaller`
   - `DigestBackgroundService`
   - `DigestRunMetadataStore`
+  - `DigestRunHistoryStore`
+  - `DigestRunLock`
 - `DigestCLI` verzweigt beim Start frueh fuer `--run-digests-once`, `--install-digest-agent`, `--uninstall-digest-agent` und `--kickstart-digest-agent`.
-- `DigestCLI` kann fuer Tests isolierte Pfade ueber `--project-repo-store`, `--digest-output-root` und `--digest-metadata-store` verwenden.
+- `DigestCLI` kann fuer Tests isolierte Pfade ueber `--project-repo-store`, `--digest-output-root`, `--digest-metadata-store`, `--digest-history-store` und `--digest-lock` verwenden.
 - `script/build_and_run.sh` kann jetzt `digest-once`, `install-agent`, `kickstart-agent` und `uninstall-agent`.
-- `script/verify_daily_digest_agent.sh` baut ein temporaeres Git-Repo, laesst den CLI-Digest laufen und prueft das erzeugte TurboQuant-HTML.
+- `script/verify_daily_digest_agent.sh` baut ein temporaeres Git-Repo, laesst den CLI-Digest laufen und prueft das erzeugte TurboQuant-HTML sowie den geschriebenen History-Eintrag.
 - `ProjectRepoStore` speichert Repo-Konfiguration lokal als JSON.
 - Repo-Konfigurationen enthalten optionale Security-Scoped Bookmarks; alte gespeicherte Eintraege ohne Bookmark bleiben weiter lesbar.
-- `GitActivityScanner` prueft Git-Worktrees ueber `/usr/bin/git`, ruft Git ohne Shell-String auf und liest Commit-Metadaten plus geaenderte Dateien.
+- `GitActivityScanner` prueft Git-Worktrees ueber `/usr/bin/git`, ruft Git ohne Shell-String auf, liest Commit-Metadaten plus geaenderte Dateien und bricht haengende Git-Prozesse nach einem Timeout ab.
 - `DailyDigestRunner` kapselt den schweren Digest-Lauf, damit die UI ihn per `Task.detached` starten kann.
 - `DailyDigestRenderer` erzeugt selbststaendige HTML-Dateien mit eingebettetem CSS im TurboQuant-Stil.
 - `AppModel.runDailyDigests(now:)` erzeugt pro aktivem Repo und Tag eine HTML-Datei, wenn neue Commits gefunden wurden.
 - Settings zeigt jetzt eine `Daily Digest Automation`-Sektion fuer Installieren, Entfernen und einmaliges Starten des lokalen 20:00-LaunchAgents.
 - Nach `Run Agent Now` pollt die App kurz die lokalen Stores und aktualisiert Feed, Repo-Status und Run-Metadaten, sobald der externe Agent fertig geschrieben hat.
+- App und CLI/LaunchAgent respektieren denselben nicht-blockierenden File-Lock, damit nicht zwei Digest-Laeufe gleichzeitig Repo-Status, Metadaten und HTML-Artefakte schreiben.
+- Run-History wird als JSON unter Application Support gespeichert und haelt standardmaessig die letzten 100 Repo-Ergebnisse.
+- Settings zeigt pro Project Repo die letzten drei Run-History-Eintraege als einfache lokale Fehler-/Statusliste.
 - Repo-Ordnernamen fuer Digest-Dateien werden sanitisiert und mit einem kurzen Repo-ID-Suffix kollisionsaermer gemacht.
 - Wenn keine Quellen vorhanden sind, faellt die App weiter auf Sample-Daten zurueck.
 
@@ -108,6 +123,8 @@
 - `Sources/DevDashboardFeed/Core/Digests/ProjectRepoAccess.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DailyDigestCommand.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DigestRunMetadataStore.swift`
+- `Sources/DevDashboardFeed/Core/Digests/DigestRunHistoryStore.swift`
+- `Sources/DevDashboardFeed/Core/Digests/DigestRunLock.swift`
 - `Sources/DevDashboardFeed/Core/Digests/ProjectRepoStore.swift`
 - `Sources/DevDashboardFeed/Core/Digests/GitActivityScanner.swift`
 - `Sources/DevDashboardFeed/Core/Digests/DailyDigestRenderer.swift`
@@ -121,6 +138,7 @@
 - `Sources/DevDashboardFeed/Models/ProjectRepo.swift`
 - `Sources/DevDashboardFeed/Models/DailyDigest.swift`
 - `Sources/DevDashboardFeed/Models/DigestRunMetadata.swift`
+- `Sources/DevDashboardFeed/Models/DigestRunHistory.swift`
 - `Sources/DevDashboardFeed/Models/DocumentSourceKind.swift`
 - `Sources/DevDashboardFeed/Features/Settings/SettingsView.swift`
 - `Sources/DevDashboardFeed/Features/Feed/FeedCardView.swift`
@@ -167,6 +185,14 @@
   - `swift build` erfolgreich nach der ersten Designsystem-/UI-Iteration.
   - Nach Formreview erneut `swift build`, `swift test` und `git diff --check` erfolgreich.
   - Nach Pixel-OS-Shell-Umbau erneut `swift build` erfolgreich.
+- Daily-Digest-Stabilitaetsrunde am 2026-05-17:
+  - `swift build` erfolgreich.
+  - `swift test` erfolgreich, 31 Tests gruen.
+  - `script/verify_daily_digest_agent.sh` erfolgreich; temporaeres Git-Repo erzeugte ein Digest-HTML und einen History-Eintrag.
+  - `script/build_and_run.sh --verify` erfolgreich; die App startet als `.app`.
+  - `git diff --check` erfolgreich.
+  - Nach der Verifikation ist kein Test-LaunchAgent unter `~/Library/LaunchAgents/com.herrstolzier.DevDashboardFeed.daily-digest.plist` installiert.
+  - Neue Tests decken History-Limit, Lock-Kollision, Git-Timeout, CLI-History-Schreiben und neue Launch-Override-Pfade ab.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -179,7 +205,7 @@
 
 ## Naechster kleinster sinnvoller Schritt
 
-Den Agent-MVP mit einem echten eigenen Repo in der laufenden App benutzen: Project Repo in Settings auswaehlen, Agent installieren, einmal kickstarten und pruefen, ob der Feed direkt danach den neuen Digest zeigt.
+Den Agent-MVP mit einem echten eigenen Repo in der laufenden App benutzen: Project Repo in Settings auswaehlen, Agent installieren, einmal kickstarten und pruefen, ob der Feed direkt danach den neuen Digest und die sichtbare Run-History zeigt.
 
 Das sollte bewusst in einem kleinen Schritt passieren:
 
@@ -194,11 +220,11 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 ## Offene Luecken und Risiken
 
 - Der lokale LaunchAgent-MVP ist implementiert und testbar, aber noch kein eingebetteter `SMAppService`-Helper.
-- Persistente Run-Metadaten existieren, aber es gibt noch keine detaillierte Run-Historie pro Repo.
+- Persistente Run-History existiert und ist in Settings sichtbar, aber noch nicht als eigener Pixelpunk-/Repo-Detail-Screen gestaltet.
 - `launchctl print` zeigt im Diagnosekontext auch geerbte Domain-Umgebung; die eigentliche Agent-Plist setzt einen minimalen `PATH`, aber sensible Terminal-Umgebung sollte beim Installieren trotzdem vermieden werden.
 - Browser-use/Playwright-QA fuer die neue Agent-E2E-Datei wurde ueber lokalen HTTP-Server ausgefuehrt; direkte `file://`-Navigation war im Browser-Tool blockiert.
 - File-Watcher fuer automatische Aktualisierung beobachteter HTML-Ordner fehlt weiterhin.
-- Sehr grosse Git-Historien koennen beim ersten Tageslauf noch teuer werden, auch wenn der Default-Cutoff jetzt Tagesanfang ist.
+- Sehr grosse Git-Historien koennen beim ersten Tageslauf noch teuer werden, auch wenn Git-Prozesse jetzt einen Timeout haben und der Default-Cutoff Tagesanfang ist.
 - Mehrere Repos mit gleichem Namen sind durch ID-Suffixe im Digest-Pfad besser getrennt, aber die UI zeigt noch keine explizite Kollisionshilfe.
 - Sehr grosse HTML-Dateien wurden noch nicht auf UI-Ruckler geprueft.
 - Erklaerbaer-Erkennung ist bewusst einfach und sollte spaeter vorsichtig erweitert werden.

@@ -189,12 +189,16 @@ import WebKit
             "--project-repo-store", "/tmp/devboard/repos.json",
             "--digest-output-root", "/tmp/devboard/digests",
             "--digest-metadata-store", "/tmp/devboard/metadata.json",
+            "--digest-history-store", "/tmp/devboard/history.json",
+            "--digest-lock", "/tmp/devboard/digest.lock",
         ]
     )
 
     #expect(overrides.projectRepoStoreURL?.path == "/tmp/devboard/repos.json")
     #expect(overrides.digestOutputRootURL?.path == "/tmp/devboard/digests")
     #expect(overrides.digestMetadataStoreURL?.path == "/tmp/devboard/metadata.json")
+    #expect(overrides.digestHistoryStoreURL?.path == "/tmp/devboard/history.json")
+    #expect(overrides.digestLockURL?.path == "/tmp/devboard/digest.lock")
 }
 
 @MainActor

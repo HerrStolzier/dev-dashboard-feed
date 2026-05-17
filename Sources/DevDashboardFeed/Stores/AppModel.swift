@@ -12,6 +12,7 @@ final class AppModel {
     var digestStatusMessage: String?
     var backgroundAgentStatusMessage: String?
     var digestRunMetadata: DigestRunMetadata
+    var digestRunHistory: DigestRunHistory
     var missedScheduledRunAt: Date?
     var isDigestRunInProgress: Bool
     let preferredDocumentSelectionID: DocumentItem.ID?
@@ -24,6 +25,10 @@ final class AppModel {
     private let projectRepoStore: ProjectRepoStore
     @ObservationIgnored
     private let metadataStore: DigestRunMetadataStore
+    @ObservationIgnored
+    private let historyStore: DigestRunHistoryStore
+    @ObservationIgnored
+    private let runLock: DigestRunLock
     @ObservationIgnored
     private let gitActivityScanner: any GitActivityScanning
     @ObservationIgnored
@@ -46,6 +51,8 @@ final class AppModel {
         documentScanner: any DocumentScanning = DocumentScanner(),
         projectRepoStore: ProjectRepoStore = ProjectRepoStore(),
         metadataStore: DigestRunMetadataStore = DigestRunMetadataStore(),
+        historyStore: DigestRunHistoryStore = DigestRunHistoryStore(),
+        runLock: DigestRunLock = DigestRunLock(),
         gitActivityScanner: any GitActivityScanning = GitActivityScanner(),
         dailyDigestRenderer: DailyDigestRenderer = DailyDigestRenderer(),
         digestOutputRoot: URL = AppModel.defaultDigestOutputRoot(),
@@ -59,6 +66,8 @@ final class AppModel {
         self.documentScanner = documentScanner
         self.projectRepoStore = projectRepoStore
         self.metadataStore = metadataStore
+        self.historyStore = historyStore
+        self.runLock = runLock
         self.gitActivityScanner = gitActivityScanner
         self.dailyDigestRenderer = dailyDigestRenderer
         self.digestOutputRoot = digestOutputRoot
@@ -70,11 +79,13 @@ final class AppModel {
         let restoredProjectRepos = projectRepoAccess.restore((try? projectRepoStore.load()) ?? [])
         var loadedMetadata = (try? metadataStore.load()) ?? .empty
         loadedMetadata.nextScheduledRunAt = digestScheduler.nextScheduledRun(after: .now)
+        let loadedHistory = (try? historyStore.load()) ?? .empty
 
         self.folderStatusMessage = nil
         self.digestStatusMessage = nil
         self.backgroundAgentStatusMessage = nil
         self.digestRunMetadata = loadedMetadata
+        self.digestRunHistory = loadedHistory
         self.missedScheduledRunAt = nil
         self.isDigestRunInProgress = false
         self.documents = []
@@ -223,11 +234,21 @@ final class AppModel {
             renderer: dailyDigestRenderer,
             digestOutputRoot: digestOutputRoot
         )
+        let runLock = self.runLock
 
         Task {
-            let output = await Task.detached(priority: .userInitiated) {
-                runner.run(now: now)
-            }.value
+            let output: DailyDigestRunOutput
+            do {
+                output = try await Task.detached(priority: .userInitiated) {
+                    try runLock.withLock {
+                        runner.run(now: now)
+                    }
+                }.value
+            } catch {
+                output = DailyDigestRunOutput(updatedRepos: projectRepos, results: [
+                    .failed(repoName: "Daily Digest Lock", message: error.localizedDescription),
+                ])
+            }
             finishDigestRun(output, now: now)
         }
     }
@@ -288,6 +309,7 @@ final class AppModel {
             digestRunMetadata = loadedMetadata
         }
 
+        digestRunHistory = (try? historyStore.load()) ?? digestRunHistory
         updateCatchUpStatus(now: now)
         reloadDocuments()
 
@@ -306,7 +328,18 @@ final class AppModel {
             digestOutputRoot: digestOutputRoot
         )
 
-        return finishDigestRun(runner.run(now: now), now: now)
+        do {
+            return try runLock.withLock {
+                finishDigestRun(runner.run(now: now), now: now)
+            }
+        } catch {
+            return finishDigestRun(
+                DailyDigestRunOutput(updatedRepos: projectRepos, results: [
+                    .failed(repoName: "Daily Digest Lock", message: error.localizedDescription),
+                ]),
+                now: now
+            )
+        }
     }
 
     func reloadDocuments() {
@@ -428,6 +461,7 @@ final class AppModel {
         digestStatusMessage = makeDigestStatusMessage(from: results)
         isDigestRunInProgress = false
         updateDigestRunMetadata(after: results, now: now)
+        appendDigestRunHistory(results, now: now)
         reloadDocuments()
         return results
     }
@@ -453,6 +487,15 @@ final class AppModel {
             try metadataStore.save(digestRunMetadata)
         } catch {
             digestStatusMessage = "\(digestStatusMessage ?? "Daily Digest run finished.") Metadata could not be saved: \(error.localizedDescription)"
+        }
+    }
+
+    private func appendDigestRunHistory(_ results: [DigestRunResult], now: Date) {
+        do {
+            try historyStore.append(results: results, runAt: now, source: .app)
+            digestRunHistory = try historyStore.load()
+        } catch {
+            digestStatusMessage = "\(digestStatusMessage ?? "Daily Digest run finished.") History could not be saved: \(error.localizedDescription)"
         }
     }
 
