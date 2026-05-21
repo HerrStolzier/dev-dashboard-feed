@@ -29,6 +29,7 @@ Wie ein privates, buntes Social-Media-Devboard fuer eigene Projekte, nur lokal, 
 - Repo: `https://github.com/HerrStolzier/dev-dashboard-feed`
 - Aktueller Arbeitsstand: `docs/current-status.md`
 - Dauerhafte Learnings: `docs/project-learnings.md`
+- Workflow Guard: `WORKFLOWS.md`, `CHECKS.md`, `KNOWN_ERRORS.md`
 
 ## Aktueller Stand
 
@@ -47,6 +48,7 @@ Wie ein privates, buntes Social-Media-Devboard fuer eigene Projekte, nur lokal, 
 - HTML-Dateien bleiben unveraenderte Quellartefakte
 - Git-Repos bleiben ebenfalls unveraendert; generierte Digests liegen zentral in Application Support
 - Die App legt nur Index, Metadaten, Preview und Feed-Darstellung darueber
+- Codex App Server / Codex SDK sind aktuell keine Produkt-Abhaengigkeit; Codex-Automation gehoert vorerst hoechstens ins Entwickler-Tooling ausserhalb der App
 - Erst kleine, belastbare Schritte. Keine grossen Umbrueche ohne echten Bedarf.
 
 ## Was als Naechstes wichtig ist
@@ -63,6 +65,7 @@ Wie ein privates, buntes Social-Media-Devboard fuer eigene Projekte, nur lokal, 
 - Nicht zuerst Animationen priorisieren, bevor der lokale Projektfluss stabil ist
 - Nicht HTML-Dateien mutieren oder umschreiben
 - Nicht Git-Repos beschreiben oder Working-Tree-Dateien als Digest-Quelle verwenden
+- Nicht Codex App Server, Codex SDK oder Cloud-/AI-Abhaengigkeiten in den Produktpfad ziehen, solange kein bewusstes eingebautes Projekt-Agent-Feature geplant ist
 - Keine grosse Architektur ausdenken, wenn ein kleiner lokaler Schritt reicht
 
 ## UX-Leitlinien
@@ -102,8 +105,10 @@ Wenn etwas davon in einer Runde nicht sinnvoll oder nicht moeglich ist, muss das
 
 Das ist in diesem Projekt verpflichtend:
 
+- Nach nicht-trivialen Aenderungen muss `python3 scripts/agent_finish.py` laufen, sofern kein klarer Grund dagegen spricht.
 - Nach jedem abgeschlossenen Schritt muss `docs/current-status.md` aktualisiert werden.
 - Wenn dabei eine neue dauerhafte Erkenntnis entstanden ist, muss auch `docs/project-learnings.md` aktualisiert werden.
+- Wenn Workflows, bekannte Fehler oder Pruefkommandos geaendert werden, muessen `WORKFLOWS.md`, `KNOWN_ERRORS.md` oder `CHECKS.md` mitgezogen werden.
 - Ein neuer Agent soll den Stand allein ueber diese Dokumente und den Code verstehen koennen, ohne den Chatverlauf zu brauchen.
 
 `docs/current-status.md` soll immer mindestens diese Punkte enthalten:
@@ -119,6 +124,9 @@ Das ist in diesem Projekt verpflichtend:
 - `AGENTS.md`: stabile Regeln, Arbeitsweise, Architektur-Richtung und Projektgrenzen
 - `docs/current-status.md`: aktueller Uebergabe-Stand fuer den naechsten Agent
 - `docs/project-learnings.md`: langlebige technische Learnings und wiederkehrende Stolpersteine
+- `WORKFLOWS.md`: wichtige Projektablaeufe mit Start, Input, Output, Dateien, Fehlern und Pruefung
+- `CHECKS.md`: Standard- und Zielpruefungen fuer Agenten
+- `KNOWN_ERRORS.md`: verstandene Fehlerbilder mit Ursache und Loesung
 
 ## Empfehlung fuer den naechsten Agent
 

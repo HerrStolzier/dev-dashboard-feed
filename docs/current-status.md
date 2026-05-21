@@ -1,9 +1,19 @@
 # Current Status
 
-## Stand vom 2026-05-17
+## Stand vom 2026-05-21
 
 ## Zuletzt abgeschlossen
 
+- Vibe Workflow Guard eingerichtet:
+  - `WORKFLOWS.md`, `CHECKS.md`, `KNOWN_ERRORS.md` angelegt und projektspezifisch befuellt.
+  - `scripts/workflow_check.py` prueft Guard-Dateien, fehlende Workflow-Sektionen, offene TODOs, `swift build`, `swift test` und `git diff --check`.
+  - `scripts/agent_finish.py` schreibt lokale Run-Notizen unter `.agents/workflow_guard_runs.md`.
+  - AGENTS und README verweisen jetzt auf den Guard und den Standard-Finish-Check.
+- Codex-AppServer-/Codex-SDK-Recherche dokumentiert:
+  - Codex App Server und Codex SDK werden vorerst nicht als Produkt-Abhaengigkeit eingebaut.
+  - Begruendung: Devboard bleibt local-first; Daily Digests sollen ohne Cloud/API-Zusammenfassung aus lokalen Git-Commits entstehen.
+  - Codex bleibt als moegliches Entwicklerwerkzeug interessant, z. B. fuer `codex exec`-Reviews, Release Notes oder Doku-Checks ausserhalb der App.
+  - App-Integration waere erst dann sinnvoll, wenn Devboard bewusst ein eingebautes Projekt-Agent-Feature bekommen soll.
 - Daily-Digest-Stabilitaetsrunde umgesetzt:
   - kleine persistente Run-History fuer die letzten Digest-Ergebnisse eingefuehrt
   - App-Run und CLI/LaunchAgent-Run schreiben beide in dieselbe History-Struktur
@@ -99,6 +109,7 @@
 - `DigestCLI` kann fuer Tests isolierte Pfade ueber `--project-repo-store`, `--digest-output-root`, `--digest-metadata-store`, `--digest-history-store` und `--digest-lock` verwenden.
 - `script/build_and_run.sh` kann jetzt `digest-once`, `install-agent`, `kickstart-agent` und `uninstall-agent`.
 - `script/verify_daily_digest_agent.sh` baut ein temporaeres Git-Repo, laesst den CLI-Digest laufen und prueft das erzeugte TurboQuant-HTML sowie den geschriebenen History-Eintrag.
+- Vibe Workflow Guard existiert projektlokal mit `WORKFLOWS.md`, `CHECKS.md`, `KNOWN_ERRORS.md`, `scripts/workflow_check.py` und `scripts/agent_finish.py`.
 - `ProjectRepoStore` speichert Repo-Konfiguration lokal als JSON.
 - Repo-Konfigurationen enthalten optionale Security-Scoped Bookmarks; alte gespeicherte Eintraege ohne Bookmark bleiben weiter lesbar.
 - `GitActivityScanner` prueft Git-Worktrees ueber `/usr/bin/git`, ruft Git ohne Shell-String auf, liest Commit-Metadaten plus geaenderte Dateien und bricht haengende Git-Prozesse nach einem Timeout ab.
@@ -110,6 +121,7 @@
 - App und CLI/LaunchAgent respektieren denselben nicht-blockierenden File-Lock, damit nicht zwei Digest-Laeufe gleichzeitig Repo-Status, Metadaten und HTML-Artefakte schreiben.
 - Run-History wird als JSON unter Application Support gespeichert und haelt standardmaessig die letzten 100 Repo-Ergebnisse.
 - Settings zeigt pro Project Repo die letzten drei Run-History-Eintraege als einfache lokale Fehler-/Statusliste.
+- Codex App Server / Codex SDK sind als Produkt-Abhaengigkeit bewusst nicht eingeplant; eine dev-only Automation mit `codex exec` bleibt spaeter optional.
 - Repo-Ordnernamen fuer Digest-Dateien werden sanitisiert und mit einem kurzen Repo-ID-Suffix kollisionsaermer gemacht.
 - Wenn keine Quellen vorhanden sind, faellt die App weiter auf Sample-Daten zurueck.
 
@@ -147,6 +159,11 @@
 - `Tests/DevDashboardFeedTests/DailyDigestTests.swift`
 - `Tests/DevDashboardFeedTests/DevDashboardFeedTests.swift`
 - `script/verify_daily_digest_agent.sh`
+- `scripts/agent_finish.py`
+- `scripts/workflow_check.py`
+- `WORKFLOWS.md`
+- `CHECKS.md`
+- `KNOWN_ERRORS.md`
 - `README.md`
 
 ## Letzte Verifikation
@@ -193,6 +210,12 @@
   - `git diff --check` erfolgreich.
   - Nach der Verifikation ist kein Test-LaunchAgent unter `~/Library/LaunchAgents/com.herrstolzier.DevDashboardFeed.daily-digest.plist` installiert.
   - Neue Tests decken History-Limit, Lock-Kollision, Git-Timeout, CLI-History-Schreiben und neue Launch-Override-Pfade ab.
+- Dokumentationsupdate am 2026-05-19:
+  - Codex-AppServer-/Codex-SDK-Recherche in README, current-status, project-learnings und AGENTS eingeordnet.
+  - Keine Code-Aenderung; daher kein Build/Test erforderlich.
+- Vibe-Workflow-Guard-Setup am 2026-05-21:
+  - `python3 scripts/agent_finish.py` erfolgreich.
+  - Der Finish-Check fuehrte `swift build`, `swift test` und `git diff --check` erfolgreich aus.
 - `swift test` am 2026-04-29 nach Review-Fixes erneut erfolgreich, 19 Tests gruen.
 - `swift build` am 2026-04-29 nach Review-Fixes erneut erfolgreich.
 - `git diff --check` am 2026-04-29 erfolgreich.
@@ -212,6 +235,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - danach entscheiden, ob der LaunchAgent-MVP reicht oder ob ein eingebetteter Helper mit `SMAppService` wirklich benoetigt wird
 - `SMAppService` nur einbauen, wenn die Bundle-Struktur dafuer wirklich passt
 - danach den File-Watcher fuer beobachtete HTML-Ordner angehen
+- Codex-Dev-Automation nur als separates Tooling pruefen, nicht als App-Abhaengigkeit
 - README bei groesseren Richtungswechseln mitziehen, damit oeffentliche Uebersicht und interne Handoff-Doku nicht auseinanderlaufen
 - Pixelpunk-Iteration visuell in der echten App pruefen und danach Settings/Repo-Verwaltung passend nachziehen
 - Formen weiter vereinheitlichen: weniger Outline-Arten, klare Card-Hierarchie, keine System-Controls, die gegen den Game-HUD-Look arbeiten
@@ -233,6 +257,7 @@ Das sollte bewusst in einem kleinen Schritt passieren:
 - Settings ist noch weitgehend native `Form` und optisch nicht auf Pixelpunk umgestellt.
 - Toolbar-Buttons und Sidebar-/Detail-Proportionen brauchen nach echter Sichtprobe wahrscheinlich noch Feinschliff.
 - Settings bleibt ein normales natives Settings-Fenster; die Pixel-OS-HUD-Leiste gilt vorerst fuer das Hauptfenster.
+- Codex App Server / SDK waeren fuer ein spaeteres eingebautes Projekt-Agent-Feature erneut zu bewerten, sind fuer den aktuellen lokalen Daily-Digest-Flow aber bewusst nicht Teil der Architektur.
 
 ## Arbeitsregel fuer den naechsten Agent
 

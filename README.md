@@ -25,6 +25,7 @@ This repository contains a working SwiftUI macOS foundation with:
 - a 20:00 LaunchAgent MVP with install, uninstall, and kickstart flows
 - generated TurboQuant-style Daily Digest HTML posts
 - run metadata for last run, last success, next scheduled run, and errors
+- run history with visible per-repo status/error entries
 - sample-data fallback when no watched folders are configured
 - local HTML preview in the detail view through `WKWebView`
 - safer preview navigation for local files and external links
@@ -36,6 +37,9 @@ The current handoff docs live in:
 
 - `docs/current-status.md`
 - `docs/project-learnings.md`
+- `WORKFLOWS.md`
+- `CHECKS.md`
+- `KNOWN_ERRORS.md`
 
 The active implementation plan lives in:
 
@@ -63,12 +67,33 @@ The app should not become a CMS or mutate the source HTML files. HTML documents
 and Git repos stay as source artifacts; the app adds index, metadata, preview,
 Daily Digest HTML, and feed presentation around them.
 
+## Codex App Server / SDK Decision
+
+Codex App Server and Codex SDK are not planned as product dependencies for
+Devboard right now. The app should stay local-first: Git commits, local HTML,
+local metadata, and generated local Digest HTML without cloud/API summaries.
+
+Codex can still be useful as a developer tool around this repository. A future
+dev-only script could use `codex exec` or the Codex SDK for review help, release
+notes, documentation checks, or CI-style analysis. That should remain outside
+the shipped macOS app unless Devboard later gets an explicit built-in project
+agent feature.
+
+Reference docs:
+
+- [Codex App Server](https://developers.openai.com/codex/app-server)
+- [Codex SDK](https://developers.openai.com/codex/sdk)
+- [Codex non-interactive mode](https://developers.openai.com/codex/noninteractive)
+
 ## Documentation Map
 
 - `README.md`: public overview, build steps, and plan summary.
 - `AGENTS.md`: stable project rules, architecture direction, and workflow.
 - `docs/current-status.md`: current handoff state for the next development step.
 - `docs/project-learnings.md`: durable technical learnings and recurring gotchas.
+- `WORKFLOWS.md`: documented project workflows and their verification commands.
+- `CHECKS.md`: standard finish checks and targeted verification commands.
+- `KNOWN_ERRORS.md`: understood repeated errors with causes and fixes.
 - `daily-digest-background-agent-plan.md`: detailed phased plan for the 20:00
   Daily Digest automation.
 
@@ -97,7 +122,7 @@ automation:
    launch checks, and browser visual QA.
 
 Current plan status: the shared runtime, CLI mode, LaunchAgent MVP, run
-metadata, Settings status, E2E script, and browser QA path are implemented.
+metadata/history, Settings status, E2E script, and browser QA path are implemented.
 The next practical checkpoint is to use the Agent MVP with a real personal repo
 inside the running app, then decide whether `SMAppService` is still needed or
 whether the next product step should be the HTML folder file watcher.
@@ -130,6 +155,12 @@ modern native macOS app with game-HUD energy.
 ```bash
 swift build
 swift test
+```
+
+Standard agent finish check:
+
+```bash
+python3 scripts/agent_finish.py
 ```
 
 To build and launch the macOS app bundle:

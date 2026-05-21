@@ -41,6 +41,10 @@ Kurzlebige To-dos oder rein momentane Zwischenstaende gehoeren nach `docs/curren
 - App und LaunchAgent teilen sich lokale JSON-/HTML-Artefakte. Beide Pfade muessen denselben File-Lock respektieren, sonst koennen parallele Laeufe Repo-Status, Metadaten oder Digest-Dateien gegeneinander ueberschreiben.
 - Background-Laeufe brauchen neben "letzter Fehler" eine kleine Run-History. Das ist die lokale Devboard-Variante von Audit-Log/Deadletter: Zeitpunkt, Quelle, Repo, Ergebnis, Commit-Anzahl und Fehler bleiben nachvollziehbar.
 - Git-Prozesse in einer lokalen Automation brauchen Timeouts. Ein haengender `git`-Aufruf darf nicht den ganzen Agenten oder die App-Digest-Aktion endlos blockieren.
+- Codex App Server und Codex SDK sind fuer Devboard aktuell keine Produkt-Basis. Sie lohnen sich eher als Entwickler-Automation ausserhalb der App; im Produkt wuerden sie die local-first-Grenze, Datenschutzlage und Architektur-Komplexitaet deutlich veraendern.
+- Wenn Devboard spaeter ein bewusstes eingebautes Projekt-Agent-Feature bekommt, muss Codex App Server / SDK neu bewertet werden. Bis dahin bleibt `codex exec` als moegliches dev-only Script der einfachere Pfad.
+- Der Vibe Workflow Guard ist projektlokal: `WORKFLOWS.md`, `CHECKS.md`, `KNOWN_ERRORS.md`, `scripts/workflow_check.py` und `scripts/agent_finish.py`. Keine Hooks, keine CI, keine globalen Tools.
+- In dieser macOS-Umgebung muss der Guard mit `python3` gestartet werden; `python` ist nicht verfuegbar.
 - Beim erneuten Wiederherstellen von Project-Repo-Bookmarks alte Security-Scoped-Zugriffe sauber stoppen, bevor neue aktive URLs uebernommen werden.
 - Wenn Browser-Tools lokale `file://`-URLs blockieren, ist ein kurzer lokaler HTTP-Server ein brauchbarer visueller QA-Pfad fuer selbststaendige Digest-HTMLs.
 - README, AGENTS und current-status koennen bei schnellen Produktwechseln auseinanderlaufen. Bei Richtungswechseln immer mindestens README und current-status zusammen pruefen.
