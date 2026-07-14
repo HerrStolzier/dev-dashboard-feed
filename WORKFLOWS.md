@@ -1,5 +1,10 @@
 # Workflow Register
 
+> **Zweck:** Register der Daily-Digest-Workflows der Swift-macOS-App (Digest, Git-Activity-Scan, Doku-Update).
+> **Scope:** Start, Input, Output und Pruefung je Workflow.
+> **Suchbegriffe:** swift, macos, digest, launchagent, git, scanner, preview, doku
+> **Stand:** 2026-07-14
+
 ## Daily Digest Development Workflow
 
 ### Zweck
@@ -59,7 +64,7 @@ Fuer den Daily-Digest-Agenten:
 - Xcode 16 / Swift 6 toolchain
 - `/usr/bin/git`
 - launchd/LaunchAgent fuer den lokalen 20:00-Digest-MVP
-- keine Produkt-Abhaengigkeit auf Codex App Server, Codex SDK, Cloud-API oder AI-Zusammenfassung
+- keine Produkt-Abhaengigkeit auf Cloud-AI-Dienste, Agent-SDKs, Cloud-API oder AI-Zusammenfassung
 
 ### Bekannte Fehlerfaelle
 
@@ -114,12 +119,12 @@ python3 scripts/agent_finish.py
 
 - aktualisiertes `docs/current-status.md`
 - bei dauerhaften Erkenntnissen aktualisiertes `docs/project-learnings.md`
-- bei stabilen Regeln aktualisiertes `AGENTS.md`
+- bei stabilen Regeln aktualisiertes `CLAUDE.md`
 - bei oeffentlicher Projektuebersicht aktualisiertes `README.md`
 
 ### Wichtige Dateien
 
-- `AGENTS.md`
+- `CLAUDE.md`
 - `README.md`
 - `docs/current-status.md`
 - `docs/project-learnings.md`

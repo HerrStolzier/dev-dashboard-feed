@@ -1,5 +1,10 @@
 # Known Errors
 
+> **Zweck:** Bekannte Fehler der Dashboard-App und des Guard-Setups.
+> **Scope:** LaunchAgent-Zustand, Digest-Races, Guard-Installation.
+> **Suchbegriffe:** python, launchagent, stale, digest, race, concurrent, guard
+> **Stand:** 2026-07-14
+
 This file tracks real, understood errors and their fixes. Do not add speculative issues here; use `docs/current-status.md` for open risks.
 
 ## `python` command not found when installing the workflow guard
@@ -21,7 +26,8 @@ This macOS environment exposes Python as `python3`, not `python`.
 Use `python3` for guard commands:
 
 ```bash
-python3 /Users/clawdkent/.codex/skills/vibe-workflow-guard/scripts/bootstrap_guard.py --root .
+# Claude-Portierung des Workflow-Guard-Systems:
+python3 /Users/ten.december/claude-projects/workflow-guard-system/plugin/scripts/bootstrap_guard.py --root .
 python3 scripts/agent_finish.py
 ```
 

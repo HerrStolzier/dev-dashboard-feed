@@ -1,0 +1,4 @@
+set -e
+swift build
+swift test
+git diff --check

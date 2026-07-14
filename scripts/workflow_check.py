@@ -1,89 +1,109 @@
 #!/usr/bin/env python3
-from __future__ import annotations
+"""Struktur-Guard: Pflichtdateien, Pflichtabschnitte, Kopfzeilen, keine Platzhalter.
 
-import subprocess
-import sys
-from pathlib import Path
+Rein strukturell und damit in jedem Repo identisch (per md5 pruefbar).
+Technische Projektchecks gehoeren NICHT hierher, sondern nach
+.agents/project_check - agent_finish.py fuehrt sie aus.
+"""
+
+import pathlib
 import re
+import sys
 
+# Am Script-Pfad verankern, nicht am cwd (Hook-Aufrufe haben beliebige cwd).
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-ROOT = Path(__file__).resolve().parents[1]
-REQUIRED = [
-    "AGENTS.md",
-    "WORKFLOWS.md",
-    "KNOWN_ERRORS.md",
-    "CHECKS.md",
+# Datei -> Liste von Markierungen, die im Text vorkommen muessen
+REQUIRED_FILES = {
+    "CLAUDE.md": ["## Abschluss", "## Belegpflicht"],
+    "WORKFLOWS.md": ["## "],
+    "KNOWN_ERRORS.md": [],
+    "CHECKS.md": ["## Standardabschluss"],
+}
+
+REQUIRED_SCRIPTS = [
     "scripts/workflow_check.py",
     "scripts/agent_finish.py",
-]
-WORKFLOW_HEADINGS = [
-    "Zweck",
-    "Start",
-    "Input",
-    "Output",
-    "Wichtige Dateien",
-    "Abhaengigkeiten",
-    "Bekannte Fehlerfaelle",
-    "Pruefung",
-    "Letzter Review",
-]
-GUARD_DOCS = [
-    "WORKFLOWS.md",
-    "KNOWN_ERRORS.md",
-    "CHECKS.md",
+    "scripts/claim_check.py",
+    "scripts/doc_drift_check.py",
 ]
 
+# Unausgefuellte Templates sind schlimmer als keine Doku: sie lesen sich wie Wahrheit.
+PLACEHOLDER_MARKERS = ["PLATZHALTER", "TODO(guard)", "<!-- fixme -->"]
 
-def run_check(command: list[str]) -> str | None:
-    result = subprocess.run(command, cwd=ROOT)
-    if result.returncode != 0:
-        return "failed: " + " ".join(command)
-    return None
+# Nur diese Dateien werden auf Platzhalter geprueft (nicht der ganze Code).
+PLACEHOLDER_SCOPE = ["WORKFLOWS.md", "CHECKS.md", "KNOWN_ERRORS.md"]
 
-
-def has_placeholder_todo(text: str) -> bool:
-    patterns = [
-        re.compile(r"^\s*TODO\b", re.MULTILINE),
-        re.compile(r"TODO:\s+", re.MULTILINE),
-        re.compile(r"-\s+TODO\b", re.MULTILINE),
-    ]
-    return any(pattern.search(text) for pattern in patterns)
+# Greppbarer Kopf: Agenten sollen per grep das richtige Doc finden, statt alle
+# zu lesen. Muss direkt nach dem H1 stehen, damit `head` es sicher erfasst.
+HEADER_SCOPE = ["WORKFLOWS.md", "CHECKS.md", "KNOWN_ERRORS.md"]
+HEADER_LINES = 10
+HEADER_FIELDS = ["Zweck", "Scope", "Suchbegriffe", "Stand"]
+STAND_RE = re.compile(r"^> \*\*Stand:\*\* (\d{4}-\d{2}-\d{2})\s*$")
 
 
-def main() -> int:
-    failures = []
-    for relative in REQUIRED:
-        if not (ROOT / relative).exists():
-            failures.append(f"missing: {relative}")
+def check_required_files(problems):
+    for fname, needles in REQUIRED_FILES.items():
+        p = ROOT / fname
+        if not p.exists():
+            problems.append(f"fehlt: {fname}")
+            continue
+        text = p.read_text(encoding="utf-8", errors="replace")
+        for n in needles:
+            if n not in text:
+                problems.append(f"{fname}: Abschnitt/Markierung fehlt: '{n.strip()}'")
 
-    workflow_text = (ROOT / "WORKFLOWS.md").read_text(encoding="utf-8") if (ROOT / "WORKFLOWS.md").exists() else ""
-    for heading in WORKFLOW_HEADINGS:
-        if f"### {heading}" not in workflow_text:
-            failures.append(f"WORKFLOWS.md missing section: {heading}")
 
-    for relative in GUARD_DOCS:
-        path = ROOT / relative
-        if path.exists() and has_placeholder_todo(path.read_text(encoding="utf-8")):
-            failures.append(f"unresolved TODO in {relative}")
+def check_required_scripts(problems):
+    for s in REQUIRED_SCRIPTS:
+        if not (ROOT / s).exists():
+            problems.append(f"fehlt: {s}")
 
-    for command in [
-        ["swift", "build"],
-        ["swift", "test"],
-        ["git", "diff", "--check"],
-    ]:
-        failure = run_check(command)
-        if failure:
-            failures.append(failure)
 
-    if failures:
-        print("Workflow Guard Check: FAIL")
-        for failure in failures:
-            print(f"- {failure}")
+def check_placeholders(problems):
+    for fname in PLACEHOLDER_SCOPE:
+        p = ROOT / fname
+        if not p.exists():
+            continue
+        text = p.read_text(encoding="utf-8", errors="replace")
+        for lineno, line in enumerate(text.splitlines(), 1):
+            for marker in PLACEHOLDER_MARKERS:
+                if marker in line:
+                    problems.append(f"{fname}:{lineno}: unausgefuellter Platzhalter '{marker}'")
+
+
+def check_headers(problems):
+    for fname in HEADER_SCOPE:
+        p = ROOT / fname
+        if not p.exists():
+            continue  # Fehlen meldet bereits check_required_files
+        head = p.read_text(encoding="utf-8", errors="replace").splitlines()[:HEADER_LINES]
+        for field in HEADER_FIELDS:
+            if not any(line.startswith(f"> **{field}:**") for line in head):
+                problems.append(
+                    f"{fname}: Kopfzeile '> **{field}:**' fehlt in den ersten {HEADER_LINES} Zeilen"
+                )
+        stand = [line for line in head if line.startswith("> **Stand:**")]
+        if stand and not STAND_RE.match(stand[0]):
+            problems.append(f"{fname}: '> **Stand:**' braucht ein Datum als YYYY-MM-DD")
+
+
+def main():
+    problems = []
+    check_required_files(problems)
+    check_required_scripts(problems)
+    check_headers(problems)
+    check_placeholders(problems)
+
+    if problems:
+        print("WORKFLOW-GUARD: FAIL", file=sys.stderr)
+        for p in problems:
+            print(" - " + p, file=sys.stderr)
         return 1
 
-    print("Workflow Guard Check: OK")
+    print("WORKFLOW-GUARD: OK")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    sys.exit(main())

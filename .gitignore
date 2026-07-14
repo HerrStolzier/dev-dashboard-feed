@@ -4,4 +4,7 @@
 Package.resolved
 DerivedData/
 dist/
-.agents/
+.agents/*
+!.agents/.gitignore
+!.agents/project_check
+!.agents/doc_paths_ignore
